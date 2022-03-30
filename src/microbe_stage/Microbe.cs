@@ -479,7 +479,7 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         HandleFlashing(delta);
         HandleHitpointsRegeneration(delta);
-        HandleReproduction(delta);
+        // HandleReproduction(delta); // changed: commented out
 
         // Handles engulfing related stuff as well as modifies the
         // movement factor. This needs to be done before Update is
@@ -716,7 +716,7 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         var got = Compounds.TakeCompound(atp, cost);
 
-        float force = Constants.CELL_BASE_THRUST;
+        float force = Constants.CELL_BASE_THRUST * Mathf.Sqrt(HexCount); // changed: added * Mathf.Sqrt(HexCount)
 
         // Halve speed if out of ATP
         if (got < cost)

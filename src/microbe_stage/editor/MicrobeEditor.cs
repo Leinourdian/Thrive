@@ -1078,7 +1078,9 @@ public class MicrobeEditor : NodeWithInput, ILoadableGameState, IGodotEarlyNodeR
 
     public float CalculateHitpoints()
     {
-        var maxHitpoints = Membrane.Hitpoints +
+        // var pooi = SimulationParameters.Instance.GetAllOrganelles();
+
+        var maxHitpoints = Membrane.Hitpoints + placedHexes.Count * 5 +
             (Rigidity * Constants.MEMBRANE_RIGIDITY_HITPOINTS_MODIFIER);
 
         return maxHitpoints;

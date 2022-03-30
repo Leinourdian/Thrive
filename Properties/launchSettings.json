@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Thrive": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\Users\\Daniel\\Thrive"
+    }
+  }
+}

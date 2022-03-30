@@ -42,6 +42,18 @@ public class MicrobeAI
     [JsonProperty]
     private float pursuitThreshold;
 
+    [JsonProperty]
+    private float boredom; // changed: added this
+
+    [JsonProperty]
+    private float lastPreyDistance; // changed: added this
+
+    [JsonProperty]
+    private float lastPreyHitpoints; // changed: added this
+
+    [JsonProperty]
+    private Microbe boringMicrobe; // changed: added this
+
     /// <summary>
     ///   Stores the value of microbe.totalAbsorbedCompound at tick t-1 before it is cleared and updated at tick t.
     ///   Used for compounds gradient computation.
@@ -114,7 +126,7 @@ public class MicrobeAI
             receivedCommand = signaler.SignalCommand;
         }
 
-        ChooseActions(random, data, signaler);
+        ChooseActions(random, data, signaler, delta); // changed: added delta
 
         // Store the absorbed compounds for run and rumble
         previouslyAbsorbedCompounds.Clear();
@@ -140,7 +152,7 @@ public class MicrobeAI
         microbe.TotalAbsorbedCompounds.Clear();
     }
 
-    private void ChooseActions(Random random, MicrobeAICommonData data, Microbe? signaler)
+    private void ChooseActions(Random random, MicrobeAICommonData data, Microbe? signaler, float delta) // changed: added delta
     {
         if (microbe.IsBeingEngulfed)
         {
@@ -206,7 +218,7 @@ public class MicrobeAI
         }
 
         // If there are no chunks, look for living prey to hunt
-        var possiblePrey = GetNearestPreyItem(data.AllMicrobes);
+        var possiblePrey = GetNearestPreyItem(data.AllMicrobes, delta); // changed: added delta
         if (possiblePrey != null)
         {
             bool engulfPrey = microbe.CanEngulf(possiblePrey) &&
@@ -313,58 +325,126 @@ public class MicrobeAI
     /// </summary>
     /// <returns>The nearest prey item.</returns>
     /// <param name="allMicrobes">All microbes.</param>
-    private Microbe? GetNearestPreyItem(List<Microbe> allMicrobes)
+    private Microbe? GetNearestPreyItem(List<Microbe> allMicrobes, float delta)
     {
+        //TODO: remove commented out bits
+        //var focused = focusedPrey.Value;
+        //if (focused != null)
+        //{
+        //    var distanceToFocusedPrey = DistanceFromMe(focused.GlobalTransform.origin);
+        //    if (!focused.Dead && distanceToFocusedPrey <
+        //        (3500.0f * SpeciesFocus / Constants.MAX_SPECIES_FOCUS)) // changed: lowered from 3500.0f. Is boring prey remembered?
+        //    {
+        //        if (distanceToFocusedPrey < pursuitThreshold)
+        //        {
+        //            // Keep chasing, but expect to keep getting closer
+        //            LowerPursuitThreshold();
+        //            return focused;
+        //        }
+
+        //        // If prey hasn't gotten closer by now, it's probably too fast, or juking you
+        //        // Remember who focused prey is, so that you don't fall for this again
+        //        return null; // this is weird
+        //    }
+
+        //    focusedPrey.Value = null;
+        //}
+
+        // changed: added the stuff below. Gets bored too easily and can zigzag
         var focused = focusedPrey.Value;
-        if (focused != null)
-        {
-            var distanceToFocusedPrey = DistanceFromMe(focused.GlobalTransform.origin);
-            if (!focused.Dead && distanceToFocusedPrey <
-                (3500.0f * SpeciesFocus / Constants.MAX_SPECIES_FOCUS))
-            {
-                if (distanceToFocusedPrey < pursuitThreshold)
-                {
-                    // Keep chasing, but expect to keep getting closer
-                    LowerPursuitThreshold();
-                    return focused;
-                }
-
-                // If prey hasn't gotten closer by now, it's probably too fast, or juking you
-                // Remember who focused prey is, so that you don't fall for this again
-                return null;
-            }
-
-            focusedPrey.Value = null;
-        }
-
-        Microbe? chosenPrey = null;
-
+        // Microbe? chosenPrey = null;
         foreach (var otherMicrobe in allMicrobes)
         {
             if (!otherMicrobe.Dead)
             {
                 if (DistanceFromMe(otherMicrobe.GlobalTransform.origin) <
-                    (2500.0f * SpeciesAggression / Constants.MAX_SPECIES_AGGRESSION)
-                    && CanTryToEatMicrobe(otherMicrobe))
+                    (2500.0f * SpeciesAggression / Constants.MAX_SPECIES_AGGRESSION) // changed: reduced float from 2500.0f
+                    && CanTryToEatMicrobe(otherMicrobe) && otherMicrobe != boringMicrobe) // changed: added boringMicrobe
                 {
-                    if (chosenPrey == null ||
-                        (chosenPrey.GlobalTransform.origin - microbe.Translation).LengthSquared() >
-                        (otherMicrobe.GlobalTransform.origin - microbe.Translation).LengthSquared())
+                    if (focused != null)
                     {
-                        chosenPrey = otherMicrobe;
+                        if ((focused.GlobalTransform.origin - microbe.Translation).LengthSquared() >
+                        (otherMicrobe.GlobalTransform.origin - microbe.Translation).LengthSquared())
+                        {
+                            focused = otherMicrobe;
+                            boredom = 0;
+                            lastPreyDistance = DistanceFromMe(focused.GlobalTransform.origin);
+                            lastPreyHitpoints = focused.Hitpoints;
+                        }
+                    }
+                    else
+                    {
+                        focused = otherMicrobe;
+                        boredom = 0;
+                        lastPreyDistance = DistanceFromMe(focused.GlobalTransform.origin);
+                        lastPreyHitpoints = focused.Hitpoints;
                     }
                 }
             }
         }
 
-        focusedPrey.Value = chosenPrey;
-
-        if (chosenPrey != null)
+        focusedPrey.Value = focused;
+        float timeCost = 100.0f;
+        float distanceMultiplier = 1.0f;
+        float hitpointMultiplier = 10.0f;
+        if (focused != null)
         {
-            pursuitThreshold = DistanceFromMe(chosenPrey.GlobalTransform.origin) * 3.0f;
+            var distanceToFocusedPrey = DistanceFromMe(focused.GlobalTransform.origin);
+            if (!focused.Dead && boredom <
+                (3500.0f * SpeciesFocus / Constants.MAX_SPECIES_FOCUS))
+            {
+                Console.WriteLine(boredom);
+                float distanceChange = 0;
+                if (lastPreyDistance > 10.0f)
+                {
+                    distanceChange = distanceToFocusedPrey - lastPreyDistance;
+                }
+
+                float currentHitpoints = focused.Hitpoints;
+                float hitpointChange = currentHitpoints - lastPreyHitpoints;
+                AddToBoredom(timeCost * delta + distanceChange * distanceMultiplier + hitpointChange * hitpointMultiplier);
+                // Console.WriteLine(boredom); //TODO: remove this
+                lastPreyDistance = distanceToFocusedPrey;
+                lastPreyHitpoints = currentHitpoints;
+                return focused;
+            }
+
+            boringMicrobe = focused;
+            focusedPrey.Value = null;
         }
 
-        return chosenPrey;
+        return focusedPrey;
+        //Microbe? chosenPrey = null;
+
+        //foreach (var otherMicrobe in allMicrobes)
+        //{
+        //    if (!otherMicrobe.Dead)
+        //    {
+        //        if (DistanceFromMe(otherMicrobe.GlobalTransform.origin) <
+        //            (2500.0f * SpeciesAggression / Constants.MAX_SPECIES_AGGRESSION) // changed: reduced float from 2500.0f
+        //            && CanTryToEatMicrobe(otherMicrobe) && otherMicrobe != boringMicrobe) // changed: added boringMicrobe
+        //        {
+        //            if (chosenPrey == null ||
+        //                (chosenPrey.GlobalTransform.origin - microbe.Translation).LengthSquared() >
+        //                (otherMicrobe.GlobalTransform.origin - microbe.Translation).LengthSquared())
+        //            {
+        //                chosenPrey = otherMicrobe;
+        //            }
+        //        }
+        //    }
+        //}
+
+        //focusedPrey.Value = focused;
+
+        //boredom = 0; //changed: added this
+
+        //if (chosenPrey != null)
+        //{
+        //    pursuitThreshold = DistanceFromMe(chosenPrey.GlobalTransform.origin) * 3.0f;
+        //    lastDistanceToPrey = DistanceFromMe(chosenPrey.GlobalTransform.origin); //changed: added this. can be null
+        //}
+
+        //return chosenPrey;
     }
 
     /// <summary>
@@ -650,7 +730,7 @@ public class MicrobeAI
     {
         // Turn on engulf mode if close
         // Sometimes "close" is hard to discern since microbes can range from straight lines to circles
-        if ((microbe.Translation - targetPosition).LengthSquared() <= microbe.EngulfSize * 2.0f)
+        if ((microbe.Translation - targetPosition).LengthSquared() <= microbe.EngulfSize * 2.0f) // changed: reduced float from 2.0f
         {
             microbe.State = Microbe.MicrobeState.Engulf;
         }
@@ -738,24 +818,38 @@ public class MicrobeAI
         microbe.MovementDirection = new Vector3(0, 0, -speed);
     }
 
+    // changed: lowered treshold from 0.95f. 0.5f is too low for most but too high for some, maybe some refocus too easily?
+    // i'm guessing it's turning its focus to something more interesting, then gets bored of that and turns it focus to me again
     private void LowerPursuitThreshold()
     {
         pursuitThreshold *= 0.95f;
+    }
+
+    private void AddToBoredom(float amount) // changed: added this
+    {
+        boredom += amount;
     }
 
     private bool CanTryToEatMicrobe(Microbe targetMicrobe)
     {
         var sizeRatio = microbe.EngulfSize / targetMicrobe.EngulfSize;
 
-        return targetMicrobe.Species != microbe.Species && (
-            (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.3f && CanShootToxin())
-            || (sizeRatio >= Constants.ENGULF_SIZE_RATIO_REQ));
+        return (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.3f && CanShootToxin())
+            || microbe.CanEngulf(targetMicrobe);
+
+        //return targetMicrobe.Species != microbe.Species && (
+        //    (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.3f && CanShootToxin())
+        //    ||  (sizeRatio >= Constants.ENGULF_SIZE_RATIO_REQ)); //changed: stopped chitin cells from trying to engulf me XD
     }
 
+    // changed: ">=" to ">" because otherwise it's true for cells with 0.0f focus
+    // changed: made it so cells with low capacity can shoot
     private bool CanShootToxin()
     {
-        return microbe.Compounds.GetCompoundAmount(oxytoxy) >=
-            Constants.MAXIMUM_AGENT_EMISSION_AMOUNT * SpeciesFocus / Constants.MAX_SPECIES_FOCUS;
+        float toxinAmount = microbe.Compounds.GetCompoundAmount(oxytoxy);
+        return toxinAmount > (Constants.MAXIMUM_AGENT_EMISSION_AMOUNT * SpeciesFocus / Constants.MAX_SPECIES_FOCUS);
+            //|| toxinAmount >= (0.9f * microbe.Compounds.Capacity);
+
     }
 
     private float DistanceFromMe(Vector3 target)

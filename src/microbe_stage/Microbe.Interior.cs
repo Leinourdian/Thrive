@@ -528,7 +528,7 @@ public partial class Microbe
     {
         float currentHealth = Hitpoints / MaxHitpoints;
 
-        MaxHitpoints = Species.MembraneType.Hitpoints +
+        MaxHitpoints = Species.MembraneType.Hitpoints + HexCount * 5 +
             (Species.MembraneRigidity * Constants.MEMBRANE_RIGIDITY_HITPOINTS_MODIFIER);
 
         Hitpoints = MaxHitpoints * currentHealth;
@@ -602,14 +602,14 @@ public partial class Microbe
         foreach (var organelle in organellesToAdd)
         {
             // Mark this organelle as done and return to its normal size.
-            organelle.ResetGrowth();
+            // organelle.ResetGrowth();
             organelle.WasSplit = true;
 
-            // Create a second organelle.
-            var organelle2 = SplitOrganelle(organelle);
-            organelle2.WasSplit = true;
-            organelle2.IsDuplicate = true;
-            organelle2.SisterOrganelle = organelle;
+            // Create a second organelle.  // changed: commented out
+            // var organelle2 = SplitOrganelle(organelle);
+            // organelle2.WasSplit = true;
+            // organelle2.IsDuplicate = true;
+            // organelle2.SisterOrganelle = organelle;
         }
 
         if (reproductionStageComplete)
@@ -645,7 +645,7 @@ public partial class Microbe
 
             // For NPC cells this immediately splits them and the
             // allOrganellesDivided flag is reset
-            ReadyToReproduce();
+            // ReadyToReproduce(); // changed: disabled reproduction
         }
     }
 
@@ -754,8 +754,8 @@ public partial class Microbe
 
     private void HandleOsmoregulation(float delta)
     {
-        var osmoregulationCost = (HexCount * Species.MembraneType.OsmoregulationFactor *
-            Constants.ATP_COST_FOR_OSMOREGULATION) * delta;
+        var osmoregulationCost = ((HexCount * Species.MembraneType.OsmoregulationFactor *
+            Constants.ATP_COST_FOR_OSMOREGULATION) + 0.1f * HexCount * Mathf.Sqrt(HexCount)) * delta; // changed: added + 0.1f * hex...
 
         Compounds.TakeCompound(atp, osmoregulationCost);
     }

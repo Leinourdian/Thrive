@@ -1,4 +1,14 @@
 {
+    "base_growth": {
+        "name": "BASE_GROWTH",
+        "inputs": {
+
+        },
+        "outputs": {
+            "ammonia": 0.01,
+            "phosphates": 0.01
+        }
+    },
     "respiration": {
         "name": "RESPIRATION",
         "inputs": {
@@ -34,7 +44,7 @@
             "sunlight": 1
         },
         "outputs": {
-            "glucose": 0.08
+            "glucose": 0.04
         }
     },
     "oxytoxySynthesis": {
@@ -54,7 +64,7 @@
             "atp": 5
         },
         "outputs": {
-            "oxytoxy": 0.15
+            "oxytoxy": 1.0
         }
     },
     "chemoSynthesis": {
@@ -115,7 +125,7 @@
             "sunlight": 1
         },
         "outputs": {
-            "glucose": 0.015
+            "glucose": 0.008
         }
     },
     "iron_chemolithoautotrophy": {

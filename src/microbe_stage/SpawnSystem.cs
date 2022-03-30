@@ -87,7 +87,7 @@ public class SpawnSystem
     ///   Adds an externally spawned entity to be despawned
     /// </summary>
     public static void AddEntityToTrack(ISpawned entity,
-        float radius = Constants.MICROBE_SPAWN_RADIUS)
+        float radius = Constants.MICROBE_DESPAWN_RADIUS)
     {
         entity.DespawnRadiusSquared = (int)(radius * radius);
         entity.EntityNode.AddToGroup(Constants.SPAWNED_GROUP);
@@ -424,7 +424,7 @@ public class SpawnSystem
         // value is used for spawning and
         // despawning, but apparently it works
         // just fine
-        entity.DespawnRadiusSquared = spawnType.SpawnRadiusSquared;
+        entity.DespawnRadiusSquared = Constants.MICROBE_DESPAWN_RADIUS * Constants.MICROBE_DESPAWN_RADIUS; // spawnType.SpawnRadiusSquared;
 
         entity.EntityNode.AddToGroup(Constants.SPAWNED_GROUP);
     }

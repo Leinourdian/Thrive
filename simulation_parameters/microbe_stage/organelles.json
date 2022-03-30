@@ -11,7 +11,9 @@
                 "q": 0
             }
         ],
-        "processes": {},
+        "processes": {
+            "base_growth": 10
+        },
         "components": {
             "pilus": {}
         },
@@ -36,7 +38,8 @@
             }
         ],
         "processes": {
-            "iron_chemolithoautotrophy": 2
+            "iron_chemolithoautotrophy": 2,
+            "base_growth":  1
         },
         "components": {
             "storage": {
@@ -69,7 +72,8 @@
         ],
         "processes": {
             "glycolysis": 1,
-            "nitrogenaseReaction": 1
+            "nitrogenaseReaction": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -101,7 +105,8 @@
             }
         ],
         "processes": {
-            "glycolysis": 1
+            "glycolysis": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -132,7 +137,8 @@
         ],
         "processes": {
             "glycolysis": 1,
-            "bacterial_ChemoSynthesis": 1
+            "bacterial_ChemoSynthesis": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -165,7 +171,8 @@
         ],
         "processes": {
             "glycolysis": 1,
-            "bacterial_oxytoxySynthesis": 1
+            "bacterial_oxytoxySynthesis": 1,
+            "base_growth": 1
         },
         "components": {
             "processor": {
@@ -202,7 +209,8 @@
         ],
         "processes": {
             "glycolysis": 1,
-            "chromatophore_photosynthesis": 1
+            "chromatophore_photosynthesis": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -234,7 +242,8 @@
             }
         ],
         "processes": {
-            "protein_respiration": 1
+            "protein_respiration": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -270,7 +279,8 @@
             }
         ],
         "processes": {
-            "nitrogenFixing": 1
+            "nitrogenFixing": 1,
+            "base_growth": 2
         },
         "components": {
             "storage": {
@@ -307,7 +317,8 @@
             }
         ],
         "processes": {
-            "chemoSynthesis": 1
+            "chemoSynthesis": 1,
+            "base_growth": 2
         },
         "components": {
             "storage": {
@@ -337,7 +348,9 @@
                 "q": 0
             }
         ],
-        "processes": {},
+        "processes": {
+            "base_growth": 1
+        },
         "components": {
             "storage": {
                 "capacity": 0.5
@@ -370,7 +383,9 @@
                 "q": 0
             }
         ],
-        "processes": {},
+        "processes": {
+            "base_growth": 1
+        },
         "components": {
             "storage": {
                 "capacity": 8
@@ -401,7 +416,8 @@
             }
         ],
         "processes": {
-            "respiration": 1
+            "respiration": 1,
+            "base_growth": 2
         },
         "components": {
             "storage": {
@@ -434,7 +450,8 @@
             }
         ],
         "processes": {
-            "oxytoxySynthesis": 1
+            "oxytoxySynthesis": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -504,7 +521,8 @@
             }
         ],
         "processes": {
-            "photosynthesis": 1
+            "photosynthesis": 1,
+            "base_growth": 3
         },
         "components": {
             "storage": {
@@ -535,7 +553,8 @@
             }
         ],
         "processes": {
-            "glycolysis_cytoplasm": 1
+            "glycolysis_cytoplasm": 1,
+            "base_growth": 1
         },
         "components": {
             "storage": {
@@ -603,7 +622,9 @@
                 "q": -1
             }
         ],
-        "processes": {},
+        "processes": {
+            "base_growth": 2
+        },
         "components": {
             "storage": {
                 "capacity": 4

@@ -40,6 +40,7 @@ public static class MicrobeInternalCalculations
         float membraneRigidity)
     {
         float microbeMass = Constants.MICROBE_BASE_MASS;
+        int size = 0;
 
         float organelleMovementForce = 0;
 
@@ -60,6 +61,7 @@ public static class MicrobeInternalCalculations
         foreach (var organelle in organellesList)
         {
             microbeMass += organelle.Definition.Mass;
+            size += organelle.Definition.HexCount;
 
             if (organelle.Definition.HasComponentFactory<MovementComponentFactory>())
             {
@@ -100,7 +102,7 @@ public static class MicrobeInternalCalculations
         organelleMovementForce += MovementForce(rightwardDirectionMovementForce, rightDirectionFactor);
         organelleMovementForce += MovementForce(leftwardDirectionMovementForce, leftDirectionFactor);
 
-        float baseMovementForce = Constants.CELL_BASE_THRUST *
+        float baseMovementForce = Constants.CELL_BASE_THRUST * Mathf.Sqrt(size) *
             (membraneType.MovementFactor - membraneRigidity * Constants.MEMBRANE_RIGIDITY_MOBILITY_MODIFIER);
 
         float finalSpeed = (baseMovementForce + organelleMovementForce) / microbeMass;

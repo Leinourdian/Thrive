@@ -72,13 +72,14 @@ public static class Constants
     /// </summary>
     public const string FLAGELLA_COMPONENT_NAME = "movement";
 
-    public const float CELL_BASE_THRUST = 50.6f;
+    public const float CELL_BASE_THRUST = 10.0f; // 50.6f;
 
     public const float MICROBE_MOVEMENT_SOUND_EMIT_COOLDOWN = 1.3f;
 
     public const int PROCESS_OBJECTS_PER_TASK = 50;
 
-    public const int MICROBE_SPAWN_RADIUS = 170;
+    public const int MICROBE_SPAWN_RADIUS = 170; // 170 default
+    public const int MICROBE_DESPAWN_RADIUS = 170;
     public const int CLOUD_SPAWN_RADIUS = 170;
 
     public const float STARTING_SPAWN_DENSITY = 70000.0f;
@@ -498,7 +499,7 @@ public static class Constants
     /// <summary>
     ///   Delete a max of this many entities per step to reduce lag from deleting tons of entities at once.
     /// </summary>
-    public const int MAX_DESPAWNS_PER_FRAME = 1;
+    public const int MAX_DESPAWNS_PER_FRAME = 100; // changed: from 1
 
     public const float TIME_BEFORE_TUTORIAL_CAN_PAUSE = 0.01f;
 

@@ -127,7 +127,7 @@ public class ProcessSystem
 
         // Add osmoregulation
         result.Osmoregulation = Constants.ATP_COST_FOR_OSMOREGULATION * hexCount *
-            membrane.OsmoregulationFactor;
+            membrane.OsmoregulationFactor + 0.1f * hexCount * Mathf.Sqrt(hexCount); // changed: added + 0.1f * hex...
 
         result.AddConsumption("osmoregulation", result.Osmoregulation);
 
@@ -389,6 +389,8 @@ public class ProcessSystem
 
             // do environmental modifier here, and save it for later
             environmentModifier *= dissolved / entry.Value;
+            // float size = bag.Capacity; // changed: added
+            // environmentModifier *= Mathf.Pow(36 * Mathf.Pi * size * size, 1 / 3) / size; // changed: added
 
             if (environmentModifier <= MathUtils.EPSILON)
                 currentProcessStatistics?.AddLimitingFactor(entry.Key);
