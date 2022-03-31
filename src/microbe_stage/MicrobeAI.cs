@@ -162,6 +162,16 @@ public class MicrobeAI
         // If nothing is engulfing me right now, see if there's something that might want to hunt me
         // TODO: https://github.com/Revolutionary-Games/Thrive/issues/2323
         Vector3? predator = GetNearestPredatorItem(data.AllMicrobes)?.GlobalTransform.origin;
+
+        // changed: cells with 0 fear can shoot predators
+        if (predator.HasValue &&
+            DistanceFromMe(predator.Value) < (1500.0 * SpeciesAggression / Constants.MAX_SPECIES_AGGRESSION) &&
+            CanShootToxin() &&
+            RollCheck(SpeciesAggression, Constants.MAX_SPECIES_AGGRESSION, random))
+        {
+            LaunchToxin(predator.Value);
+        }
+
         if (predator.HasValue &&
             DistanceFromMe(predator.Value) < (1500.0 * SpeciesFear / Constants.MAX_SPECIES_FEAR))
         {
@@ -463,9 +473,10 @@ public class MicrobeAI
                 continue;
 
             // Based on species fear, threshold to be afraid ranges from 0.8 to 1.8 microbe size.
-            if (otherMicrobe.Species != microbe.Species
-                && !otherMicrobe.Dead
-                && otherMicrobe.EngulfSize > microbe.EngulfSize * fleeThreshold)
+            if (otherMicrobe.CanEngulf(microbe))  //otherMicrobe.Species != microbe.Species
+                //&& !otherMicrobe.Dead
+                //&& !otherMicrobe.Membrane.Type.CellWall // changed: stopped cells from being afraid of chitin warriors
+                //&& otherMicrobe.EngulfSize > microbe.EngulfSize * fleeThreshold)
             {
                 if (predator == null || DistanceFromMe(predator.GlobalTransform.origin) >
                     DistanceFromMe(otherMicrobe.GlobalTransform.origin))
@@ -511,23 +522,32 @@ public class MicrobeAI
         microbe.LookAtPoint = targetPosition;
 
         // If the predator is right on top of the microbe, there's a chance to try and swing with a pilus.
-        if (DistanceFromMe(predatorLocation) < 100.0f &&
+        if (DistanceFromMe(predatorLocation) < 100.0f && // changed: lowered from 100.0f for testing. maybe this should only happen with the pilus, maybe not worth the checks
             RollCheck(SpeciesAggression, Constants.MAX_SPECIES_AGGRESSION, random))
         {
             MoveWithRandomTurn(2.5f, 3.0f, random);
         }
 
         // If prey is confident enough, it will try and launch toxin at the predator
-        if (SpeciesAggression > SpeciesFear &&
-            DistanceFromMe(predatorLocation) >
-            300.0f - (5.0f * SpeciesAggression) + (6.0f * SpeciesFear) &&
+        //if (SpeciesAggression > SpeciesFear &&
+        //    DistanceFromMe(predatorLocation) >
+        //    300.0f - (5.0f * SpeciesAggression) + (6.0f * SpeciesFear) &&
+        //    RollCheck(SpeciesAggression, Constants.MAX_SPECIES_AGGRESSION, random))
+        //{
+        //    LaunchToxin(predatorLocation);
+        //}
+
+        // No matter what, I want to make sure I'm moving. changed: order lul
+        SetMoveSpeed(Constants.AI_BASE_MOVEMENT);
+
+        if (CanShootToxin() &&
             RollCheck(SpeciesAggression, Constants.MAX_SPECIES_AGGRESSION, random))
         {
             LaunchToxin(predatorLocation);
         }
 
         // No matter what, I want to make sure I'm moving
-        SetMoveSpeed(Constants.AI_BASE_MOVEMENT);
+        //SetMoveSpeed(Constants.AI_BASE_MOVEMENT);
     }
 
     private void EngagePrey(Vector3 target, Random random, bool engulf)
@@ -832,9 +852,11 @@ public class MicrobeAI
 
     private bool CanTryToEatMicrobe(Microbe targetMicrobe)
     {
-        var sizeRatio = microbe.EngulfSize / targetMicrobe.EngulfSize;
+        //var sizeRatio = microbe.EngulfSize / targetMicrobe.EngulfSize;
+        if (targetMicrobe.Species == microbe.Species)
+            return false; // changed: now your pals won't attack you
 
-        return (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.3f && CanShootToxin())
+        return (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.0f && CanShootToxin()) // changed: reduced float from 0.3f
             || microbe.CanEngulf(targetMicrobe);
 
         //return targetMicrobe.Species != microbe.Species && (
@@ -847,9 +869,8 @@ public class MicrobeAI
     private bool CanShootToxin()
     {
         float toxinAmount = microbe.Compounds.GetCompoundAmount(oxytoxy);
-        return toxinAmount > (Constants.MAXIMUM_AGENT_EMISSION_AMOUNT * SpeciesFocus / Constants.MAX_SPECIES_FOCUS);
-            //|| toxinAmount >= (0.9f * microbe.Compounds.Capacity);
-
+        return toxinAmount > (Constants.MAXIMUM_AGENT_EMISSION_AMOUNT * SpeciesFocus / Constants.MAX_SPECIES_FOCUS)
+            || toxinAmount >= (0.9f * microbe.Compounds.Capacity);
     }
 
     private float DistanceFromMe(Vector3 target)
