@@ -36,19 +36,19 @@
 
             var microbeSpeciesHexSize = microbeSpecies.BaseHexSize;
             var predatorSpeed = microbeSpecies.BaseSpeed;
-            predatorSpeed += simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch).FinalBalance;
+            predatorSpeed += simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch).FinalBalance; // changed: not yet but ad to this
 
             // It's great if you can engulf this prey, but only if you can catch it
             var engulfScore = 0.0f;
             if (microbeSpeciesHexSize / preyHexSize >
-                Constants.ENGULF_SIZE_RATIO_REQ && !microbeSpecies.MembraneType.CellWall)
+                Constants.ENGULF_SIZE_RATIO_REQ && !microbeSpecies.MembraneType.CellWall) // changed: not yet but change to CanTryToEat
             {
                 engulfScore = Constants.AUTO_EVO_ENGULF_PREDATION_SCORE;
             }
 
-            engulfScore *= predatorSpeed > preySpeed ? 1.0f : Constants.AUTO_EVO_ENGULF_LUCKY_CATCH_PROBABILITY;
+            engulfScore *= predatorSpeed > preySpeed ? 1.0f : Constants.AUTO_EVO_ENGULF_LUCKY_CATCH_PROBABILITY; // changed: not yet but behavior could matter
 
-            var pilusScore = 0.0f;
+            var pilusScore = 0.0f; // changed: not yet but store this in species memory or smth to save time
             var oxytoxyScore = 0.0f;
             foreach (var organelle in microbeSpecies.Organelles)
             {
@@ -73,11 +73,11 @@
             // predators are less likely to use toxin against larger prey, unless they are opportunistic
             if (preyHexSize > microbeSpeciesHexSize)
             {
-                oxytoxyScore *= microbeSpecies.Behaviour.Opportunism / Constants.MAX_SPECIES_OPPORTUNISM;
+                oxytoxyScore *= microbeSpecies.Behaviour.Opportunism / Constants.MAX_SPECIES_OPPORTUNISM;  // changed: not yet but could remove this
             }
 
             // Intentionally don't penalize for osmoregulation cost to encourage larger monsters
-            return behaviourScore * (pilusScore + engulfScore + microbeSpeciesHexSize + oxytoxyScore);
+            return behaviourScore * (pilusScore + engulfScore + microbeSpeciesHexSize + oxytoxyScore); // changed: not yet but debatable; it sounds fun though
         }
 
         public override IFormattable GetDescription()

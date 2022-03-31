@@ -26,6 +26,8 @@
         {
             var microbeSpecies = (MicrobeSpecies)species;
 
+            // changed: not yet but make this about collecting compounds
+            //          collectionScore = speed * size ( and maybe fighting ability too)
             var compoundUseScore = EnergyGenerationScore(microbeSpecies, compound);
 
             var energyCost = simulationCache

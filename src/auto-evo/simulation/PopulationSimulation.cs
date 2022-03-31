@@ -182,7 +182,7 @@
                 niches.Add(new HeterotrophicFoodSource(patch, currentSpecies));
             }
 
-            foreach (var niche in niches)
+            foreach (var niche in niches) // changed: nothing but is this supposed to be O(n^2)?
             {
                 // If there isn't a source of energy here, no need for more calculations
                 if (niche.TotalEnergyAvailable() <= MathUtils.EPSILON)
@@ -198,6 +198,8 @@
                     {
                         // Softly enforces https://en.wikipedia.org/wiki/Competitive_exclusion_principle
                         // by exaggerating fitness differences
+                        // changed: nothing but this might return NaN if fitness is negative.
+                        //          Also this could be done differently (subniches with e.g. speed)
                         thisSpeciesFitness =
                             Mathf.Max(Mathf.Pow(niche.FitnessScore(currentSpecies, cache), 2.5f), 0.0f);
                     }
@@ -240,8 +242,9 @@
                 var energyBalanceInfo = cache.GetEnergyBalanceForSpecies(currentSpecies, patch);
 
                 // Modify populations based on energy
+                // changed: not yet but what the frick is this?!?
                 var newPopulation = (long)(energyBySpecies[currentSpecies]
-                    / energyBalanceInfo.FinalBalanceStationary);
+                    / 1); //energyBalanceInfo.FinalBalanceStationary);
 
                 if (trackEnergy)
                 {
@@ -251,6 +254,7 @@
 
                 // TODO: this is a hack for now to make the player experience better, try to get the same rules working
                 // for the player and AI species in the future.
+                // changed: not yet but this can be for AI too after the lower change is made
                 if (currentSpecies.PlayerSpecies)
                 {
                     // Severely penalize a species that can't osmoregulate
@@ -262,6 +266,7 @@
                 else
                 {
                     // Severely penalize a species that can't move indefinitely
+                    // changed: not yet but this should be moved to ability to hunt cells/chunks/clouds and flee
                     if (energyBalanceInfo.FinalBalance < 0)
                     {
                         newPopulation /= 10;

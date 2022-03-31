@@ -134,7 +134,7 @@
 
             var population = config.Results.GetPopulationInPatch(split, patch);
 
-            if (population < configuration.NewBiodiversityIncreasingSpeciesPopulation)
+            if (population < configuration.NewBiodiversityIncreasingSpeciesPopulation) // changed: nothing but could increase this maybe?
                 return null;
 
             // TODO: could compare the original species population here to determine if this change is beneficial to
