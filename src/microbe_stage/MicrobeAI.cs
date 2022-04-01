@@ -856,7 +856,7 @@ public class MicrobeAI
         if (targetMicrobe.Species == microbe.Species)
             return false; // changed: now your pals won't attack you
 
-        return (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.0f && CanShootToxin()) // changed: reduced float from 0.3f
+        return (SpeciesOpportunism > Constants.MAX_SPECIES_OPPORTUNISM * 0.0f && CanShootToxin() && !microbe.Membrane.Type.CellWall) // changed: reduced float from 0.3f
             || microbe.CanEngulf(targetMicrobe);
 
         //return targetMicrobe.Species != microbe.Species && (
