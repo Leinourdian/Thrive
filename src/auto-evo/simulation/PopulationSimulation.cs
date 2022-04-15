@@ -256,17 +256,17 @@
                 // TODO: this is a hack for now to make the player experience better, try to get the same rules working
                 // for the player and AI species in the future.
                 // changed: not yet but this can be for AI too after the lower change is made
-                if (currentSpecies.PlayerSpecies)
+                if (currentSpecies.PlayerSpecies || currentSpecies.Mutated)
                 {
                     // Severely penalize a species that can't osmoregulate
                     if (energyBalanceInfo.FinalBalanceStationary < 0)
                     {
-                        newPopulation /= 10;
+                        newPopulation = 0; // /= 10; // changed: testing
                     }
                 }
                 else
                 {
-                    if (energyBalanceInfo.FinalBalance < 0)//Stationary < 0)
+                    if (energyBalanceInfo.FinalBalance < 0)//Stationary < 0) // changed: won't see starving cells, should fix another way
                     {
                         newPopulation = 0;
                     }
@@ -282,6 +282,11 @@
                 // Can't survive without enough population
                 if (newPopulation < Constants.AUTO_EVO_MINIMUM_VIABLE_POPULATION)
                     newPopulation = 0;
+
+                if ((currentSpecies.PlayerSpecies || currentSpecies.Mutated) && newPopulation <= 0)
+                {
+                    newPopulation = 2; // it's just you and I, sister // changed: moved to clamp step in AutoEvoRun
+                }
 
                 populations.AddPopulationResultForSpecies(currentSpecies, patch, newPopulation);
             }

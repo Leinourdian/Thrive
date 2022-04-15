@@ -846,7 +846,7 @@
                         continue;
                     }
 
-                    if (finalPatchPopulation > 0 && finalPatchPopulation != previousPatchPopulation)
+                    if (finalPatchPopulation > 0) // changed: moved population change check from here to below
                     {
                         if (finalPatchPopulation > previousPatchPopulation)
                         {
@@ -854,7 +854,7 @@
                                     species.FormattedName, finalPatchPopulation),
                                 species.PlayerSpecies, "popUp.png");
                         }
-                        else
+                        else if (finalPatchPopulation < previousPatchPopulation)
                         {
                             patch.LogEvent(new LocalizedString("TIMELINE_SPECIES_POPULATION_DECREASE",
                                     species.FormattedName, finalPatchPopulation),

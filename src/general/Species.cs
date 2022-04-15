@@ -75,6 +75,9 @@ public abstract class Species : ICloneable
     [JsonProperty]
     public bool PlayerSpecies { get; private set; }
 
+    [JsonProperty]
+    public bool Mutated { get; set; } // changed: added this for PopulationSimulation for EditorAutoEvoRun
+
     [JsonIgnore]
     public string FormattedName => Genus + " " + Epithet;
 

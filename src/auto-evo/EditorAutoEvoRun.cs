@@ -20,9 +20,16 @@ public class EditorAutoEvoRun : AutoEvoRun
         // Custom run setup for editor's use
         var map = Parameters.World.Map;
 
+        ModifiedProperties.Mutated = true;
+
         steps.Enqueue(new CalculatePopulation(SimulationParameters.Instance.AutoEvoConfiguration, map,
             new List<Species> { ModifiedProperties },
             new List<Species> { OriginalEditedSpecies }, true) { CanRunConcurrently = false });
+
+        //if (ModifiedProperties.Population <= 0)
+        //{
+        //    ModifiedProperties.Population = 2;
+        //}
 
         AddPlayerSpeciesPopulationChangeClampStep(steps, map,
             OriginalEditedSpecies.PlayerSpecies ? ModifiedProperties : null, OriginalEditedSpecies);

@@ -259,7 +259,8 @@ public class AutoEvoRun
     /// <param name="eventType">The external event type.</param>
     public void AddExternalPopulationEffect(Species species, int constant, float coefficient, string eventType)
     {
-        ExternalEffects.Add(new ExternalEffect(species, constant, coefficient, eventType));
+        // changed: commented out to remove external effects
+        //ExternalEffects.Add(new ExternalEffect(species, constant, coefficient, eventType));
     }
 
     /// <summary>
@@ -423,9 +424,17 @@ public class AutoEvoRun
                     // Adjust to the specified fraction of the full population change
                     var previousPopulation = entry.Value.GetSpeciesPopulation(previousPopulationFrom ?? playerSpecies);
 
+                    var newestPopulation = resultPopulation.Value;
+
+                    if (newestPopulation <= 0)
+                    {
+                        newestPopulation = 2;
+                    }
+
                     var change = resultPopulation.Value - previousPopulation;
 
-                    change = (long)Math.Round(change * Constants.AUTO_EVO_PLAYER_STRENGTH_FRACTION);
+                    // changed: unleashed the full power of auto-evo on the player for testing purposes
+                    //change = (long)Math.Round(change * Constants.AUTO_EVO_PLAYER_STRENGTH_FRACTION);
 
                     result.AddPopulationResultForSpecies(playerSpecies, entry.Value, previousPopulation + change);
                 }
