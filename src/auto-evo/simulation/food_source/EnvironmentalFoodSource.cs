@@ -22,7 +22,8 @@
         {
             var microbeSpecies = (MicrobeSpecies)species;
 
-            var energyCreationScore = EnergyGenerationScore(microbeSpecies, compound);
+            // changed: not yet but this should be different from collecting clouds
+            var energyCreationScore = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, false);
 
             var energyCost = simulationCache
                 .GetEnergyBalanceForSpecies(microbeSpecies, patch)

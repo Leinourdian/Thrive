@@ -74,11 +74,18 @@ public class ProcessSystem
         float processATPProduction = 0.0f;
         float processATPConsumption = 0.0f;
         float movementATPConsumption = 0.0f;
+        bool hasNucleus = false;
 
         int hexCount = 0;
 
         foreach (var organelle in organelles)
         {
+            // changed: added this for osmoregulation calculation
+            if (organelle.Definition.InternalName == "nucleus")
+            {
+                hasNucleus = true;
+            }
+
             foreach (var process in organelle.Definition.RunnableProcesses)
             {
                 var processData = CalculateProcessMaximumSpeed(process, biome);
@@ -128,6 +135,12 @@ public class ProcessSystem
         // Add osmoregulation
         result.Osmoregulation = Constants.ATP_COST_FOR_OSMOREGULATION * hexCount *
             membrane.OsmoregulationFactor + 0.1f * hexCount * Mathf.Sqrt(hexCount); // changed: added + 0.1f * hex...
+
+        // changed: added this to incentivize the Nucleus
+        if (hasNucleus)
+        {
+            result.Osmoregulation /= 2;
+        }
 
         result.AddConsumption("osmoregulation", result.Osmoregulation);
 

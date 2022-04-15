@@ -168,19 +168,19 @@
 
             var niches = new List<FoodSource>
             {
-                new EnvironmentalFoodSource(patch, Sunlight, Constants.AUTO_EVO_SUNLIGHT_ENERGY_AMOUNT),
+                //new EnvironmentalFoodSource(patch, Sunlight, Constants.AUTO_EVO_SUNLIGHT_ENERGY_AMOUNT),
                 new CompoundFoodSource(patch, Glucose),
                 new CompoundFoodSource(patch, HydrogenSulfide),
                 new CompoundFoodSource(patch, Iron),
-                new ChunkFoodSource(patch, "marineSnow"),
-                new ChunkFoodSource(patch, "ironSmallChunk"),
-                new ChunkFoodSource(patch, "ironBigChunk"),
+                //new ChunkFoodSource(patch, "marineSnow"),
+                //new ChunkFoodSource(patch, "ironSmallChunk"),
+                //new ChunkFoodSource(patch, "ironBigChunk"),
             };
 
-            foreach (var currentSpecies in species)
-            {
-                niches.Add(new HeterotrophicFoodSource(patch, currentSpecies));
-            }
+            //foreach (var currentSpecies in species)
+            //{
+            //    niches.Add(new HeterotrophicFoodSource(patch, currentSpecies));
+            //}
 
             foreach (var niche in niches) // changed: nothing but is this supposed to be O(n^2)?
             {
@@ -243,6 +243,7 @@
 
                 // Modify populations based on energy
                 // changed: not yet but what the frick is this?!?
+                //          Change divisor to energyBalanceInfo.TotalConsumption when possible
                 var newPopulation = (long)(energyBySpecies[currentSpecies]
                     / 1); //energyBalanceInfo.FinalBalanceStationary);
 
@@ -265,12 +266,17 @@
                 }
                 else
                 {
+                    if (energyBalanceInfo.FinalBalance < 0)//Stationary < 0)
+                    {
+                        newPopulation = 0;
+                    }
                     // Severely penalize a species that can't move indefinitely
                     // changed: not yet but this should be moved to ability to hunt cells/chunks/clouds and flee
-                    if (energyBalanceInfo.FinalBalance < 0)
-                    {
-                        newPopulation /= 10;
-                    }
+                    //          added the above and commented out the below
+                    //if (energyBalanceInfo.FinalBalance < 0)
+                    //{
+                    //    newPopulation /= 10;
+                    //}
                 }
 
                 // Can't survive without enough population

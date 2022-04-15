@@ -28,7 +28,8 @@
         /// <returns>A formattable that has the description in it</returns>
         public abstract IFormattable GetDescription();
 
-        protected float EnergyGenerationScore(MicrobeSpecies species, Compound compound)
+        // changed: added cache, patch, bool
+        protected float EnergyGenerationScore(MicrobeSpecies species, Compound compound, SimulationCache cache, Patch patch, bool compoundIsSearchable)
         {
             var energyCreationScore = 0.0f;
             foreach (var organelle in species.Organelles)
@@ -50,6 +51,18 @@
                         }
                     }
                 }
+            }
+
+            // changed: added following to make this about collecting.
+            //          not yet but balance this better.
+            //          should the minimum be higher than 0?
+            if (energyCreationScore > 0 && compoundIsSearchable)
+            {
+                var energyBalanceInfo = cache.GetEnergyBalanceForSpecies(species, patch);
+                float actualSpeed = species.BaseSpeed * Math.Min(1.0f, energyBalanceInfo.FinalBalanceStationary /
+                    (energyBalanceInfo.TotalConsumption - energyBalanceInfo.TotalConsumptionStationary));
+                float result = Math.Max(0, species.BaseHexSize * species.BaseHexSize * actualSpeed * actualSpeed);
+                return result;
             }
 
             return energyCreationScore;

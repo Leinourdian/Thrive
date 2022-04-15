@@ -19,6 +19,11 @@
             preyHexSize = prey.BaseHexSize;
             preySpeed = prey.BaseSpeed;
             patch.SpeciesInPatch.TryGetValue(prey, out long population);
+            // changed: not yet but this scales to billions.
+            //          size needs to concider population calculation.
+            //          this should be dependent on how much the species is preyed upon.
+            //          preying should reduce prey population.
+            //          this should use energyBySpecies to avoid exponential growth
             totalEnergy = population * prey.Organelles.Count * Constants.AUTO_EVO_PREDATION_ENERGY_MULTIPLIER;
         }
 

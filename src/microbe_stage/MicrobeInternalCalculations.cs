@@ -102,7 +102,7 @@ public static class MicrobeInternalCalculations
         organelleMovementForce += MovementForce(rightwardDirectionMovementForce, rightDirectionFactor);
         organelleMovementForce += MovementForce(leftwardDirectionMovementForce, leftDirectionFactor);
 
-        float baseMovementForce = Constants.CELL_BASE_THRUST * Mathf.Sqrt(size) *
+        float baseMovementForce = Constants.CELL_BASE_THRUST * Mathf.Sqrt(size) * // changed: added sqrt(size)
             (membraneType.MovementFactor - membraneRigidity * Constants.MEMBRANE_RIGIDITY_MOBILITY_MODIFIER);
 
         float finalSpeed = (baseMovementForce + organelleMovementForce) / microbeMass;

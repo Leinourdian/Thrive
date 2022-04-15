@@ -27,14 +27,15 @@
             var microbeSpecies = (MicrobeSpecies)species;
 
             // changed: not yet but make this about collecting compounds
-            //          collectionScore = speed * size ( and maybe fighting ability too)
-            var compoundUseScore = EnergyGenerationScore(microbeSpecies, compound);
+            //          collectionScore = speed * size ( and maybe fighting ability too).
+            //          added parameters cache and patch
+            var compoundUseScore = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, true);
 
             var energyCost = simulationCache
                 .GetEnergyBalanceForSpecies(microbeSpecies, patch)
-                .TotalConsumptionStationary;
+                .TotalConsumptionStationary; // changed: not yet but should this take movement cost into account?
 
-            return compoundUseScore / energyCost;
+            return compoundUseScore;// / energyCost; // changed: not yet but is this good?
         }
 
         public override IFormattable GetDescription()

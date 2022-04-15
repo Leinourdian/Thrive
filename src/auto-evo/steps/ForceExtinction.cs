@@ -62,7 +62,7 @@
                 GD.Print("Running extinction step in patch ", patch.Name, ". ",
                     "Total count:", targetSpecies.Count);
 
-                var orderedTargetSpecies = targetSpecies.OrderBy(s => s.Value).Select(s => s.Key);
+                var orderedTargetSpecies = targetSpecies.OrderBy(s => s.Value).Select(s => s.Key); // changed: not yet but change to biomass
 
                 var speciesToRemoveCount = targetSpecies.Count - Math.Max(configuration.MaximumSpeciesInPatch, 0);
 

@@ -57,9 +57,9 @@
 
             // We ponder the score for each compound by its amount, leading to pondering in proportion of total
             // quantity, with a constant factor that will be eliminated when making ratios of scores for this niche.
-            var score = energyCompounds.Sum(c => EnergyGenerationScore(microbeSpecies, c.Key) * c.Value);
+            var score = energyCompounds.Sum(c => EnergyGenerationScore(microbeSpecies, c.Key, simulationCache, patch, true) * c.Value);
 
-            score *= chunkEaterSpeed * species.Behaviour.Activity;
+            score *= chunkEaterSpeed * species.Behaviour.Activity; // changed: not yet but remove or move this
 
             // If the species can't engulf, then they are dependent on only eating the runoff compounds
             if (microbeSpecies.MembraneType.CellWall ||
