@@ -27,14 +27,14 @@
             totalEnergy = population * prey.Organelles.Count * Constants.AUTO_EVO_PREDATION_ENERGY_MULTIPLIER;
         }
 
-        public override float FitnessScore(Species species, SimulationCache simulationCache)
+        public override (float, float) FitnessScore(Species species, SimulationCache simulationCache)
         {
             var microbeSpecies = (MicrobeSpecies)species;
 
             // No cannibalism
             if (microbeSpecies == prey)
             {
-                return 0.0f;
+                return (0.0f, 0.0f);
             }
 
             var behaviourScore = microbeSpecies.Behaviour.Aggression / Constants.MAX_SPECIES_AGGRESSION;
@@ -82,7 +82,7 @@
             }
 
             // Intentionally don't penalize for osmoregulation cost to encourage larger monsters
-            return behaviourScore * (pilusScore + engulfScore + microbeSpeciesHexSize + oxytoxyScore); // changed: not yet but debatable; it sounds fun though
+            return (0.0f, behaviourScore * (pilusScore + engulfScore + microbeSpeciesHexSize + oxytoxyScore)); // changed: not yet but debatable; it sounds fun though
         }
 
         public override IFormattable GetDescription()

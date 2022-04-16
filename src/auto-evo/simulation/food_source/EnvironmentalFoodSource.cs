@@ -18,18 +18,18 @@
             totalEnvironmentalEnergySource = patch.Biome.Compounds[this.compound].Dissolved * foodCapacityMultiplier;
         }
 
-        public override float FitnessScore(Species species, SimulationCache simulationCache)
+        public override (float, float) FitnessScore(Species species, SimulationCache simulationCache)
         {
             var microbeSpecies = (MicrobeSpecies)species;
 
             // changed: not yet but this should be different from collecting clouds
-            var energyCreationScore = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, false);
+            var energyCreationScore = 1.0f; //EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, false);
 
             var energyCost = simulationCache
                 .GetEnergyBalanceForSpecies(microbeSpecies, patch)
                 .TotalConsumptionStationary;
 
-            return energyCreationScore / energyCost;
+            return (energyCreationScore / energyCost, 1.0f);
         }
 
         public override IFormattable GetDescription()

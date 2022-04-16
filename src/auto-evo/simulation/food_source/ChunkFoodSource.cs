@@ -42,7 +42,7 @@
             }
         }
 
-        public override float FitnessScore(Species species, SimulationCache simulationCache)
+        public override (float, float) FitnessScore(Species species, SimulationCache simulationCache)
         {
             if (energyCompounds == null)
                 throw new InvalidOperationException("Food source not valid for this patch");
@@ -57,7 +57,7 @@
 
             // We ponder the score for each compound by its amount, leading to pondering in proportion of total
             // quantity, with a constant factor that will be eliminated when making ratios of scores for this niche.
-            var score = energyCompounds.Sum(c => EnergyGenerationScore(microbeSpecies, c.Key, simulationCache, patch, true) * c.Value);
+            var score = 0.0f; //energyCompounds.Sum(c => EnergyGenerationScore(microbeSpecies, c.Key, simulationCache, patch, true) * c.Value);
 
             score *= chunkEaterSpeed * species.Behaviour.Activity; // changed: not yet but remove or move this
 
@@ -71,7 +71,7 @@
             // Chunk (originally from marine snow) food source penalizes big creatures that try to rely on it
             score /= energyBalance.TotalConsumptionStationary;
 
-            return score;
+            return (score, 0.0f);
         }
 
         public override IFormattable GetDescription()

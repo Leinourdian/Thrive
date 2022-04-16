@@ -201,11 +201,11 @@
                         // changed: nothing but this might return NaN if fitness is negative.
                         //          Also this could be done differently (subniches with e.g. speed)
                         thisSpeciesFitness =
-                            Mathf.Max(Mathf.Pow(niche.FitnessScore(currentSpecies, cache), 2.5f), 0.0f);
+                            Mathf.Max(Mathf.Pow(niche.FitnessScore(currentSpecies, cache).Item1, 2.5f), 0.0f);
                     }
                     else
                     {
-                        thisSpeciesFitness = Mathf.Max(niche.FitnessScore(currentSpecies, cache), 0.0f);
+                        thisSpeciesFitness = Mathf.Max(niche.FitnessScore(currentSpecies, cache).Item1, 0.0f);
                     }
 
                     fitnessBySpecies[currentSpecies] = thisSpeciesFitness;
@@ -266,12 +266,13 @@
                 }
                 else
                 {
-                    if (energyBalanceInfo.FinalBalanceStationary < 0)//Stationary < 0) // changed: won't see starving cells, should fix another way
+                    if (energyBalanceInfo.FinalBalanceStationary < 0)
                     {
                         newPopulation = 0;
                     }
+
                     // Severely penalize a species that can't move indefinitely
-                    // changed: not yet but this should be moved to ability to hunt cells/chunks/clouds and flee
+                    // changed: not yet but this should be moved to ability to hunt cells/chunks/clouds and flee. it has been.
                     //          added the above and commented out the below
                     //if (energyBalanceInfo.FinalBalance < 0)
                     //{
