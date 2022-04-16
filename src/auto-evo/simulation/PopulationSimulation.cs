@@ -266,7 +266,7 @@
                 }
                 else
                 {
-                    if (energyBalanceInfo.FinalBalance < 0)//Stationary < 0) // changed: won't see starving cells, should fix another way
+                    if (energyBalanceInfo.FinalBalanceStationary < 0)//Stationary < 0) // changed: won't see starving cells, should fix another way
                     {
                         newPopulation = 0;
                     }
