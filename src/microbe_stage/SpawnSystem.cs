@@ -245,6 +245,7 @@ public class SpawnSystem
         // registered position (note that the cloud system also used to work like this -hhyyrylainen).
         // Not perfect however as going on and off could still break this.
         float squaredDistanceToLastPosition = (playerPosition - lastRecordedPlayerPosition).LengthSquared();
+        //changed: not yet but does this work?
         bool immobilePlayer = squaredDistanceToLastPosition < Constants.PLAYER_IMMOBILITY_ZONE_RADIUS_SQUARED;
 
         if (immobilePlayer)
@@ -257,8 +258,8 @@ public class SpawnSystem
         else
         {
             // The player moved, so let's update their position and reset counts in spawn radius
-            lastRecordedPlayerPosition = playerPosition;
-            estimateEntityCountInSpawnRadius = 0;
+            lastRecordedPlayerPosition = playerPosition; //changed: not yet but does this work?
+            estimateEntityCountInSpawnRadius = 0; //changed: not yet but does this work?
         }
 
         int spawned = 0;

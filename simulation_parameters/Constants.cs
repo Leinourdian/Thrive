@@ -99,7 +99,7 @@ public static class Constants
     ///     to make spawn zone match when moving.
     ///   </para>
     /// </remarks>
-    public const int PLAYER_IMMOBILITY_ZONE_RADIUS_SQUARED = 100;
+    public const int PLAYER_IMMOBILITY_ZONE_RADIUS_SQUARED = 100; //changed: not yet but should be 1000 according to the above
 
     /// <summary>
     ///   The maximum force that can be applied by currents in the fluid system
