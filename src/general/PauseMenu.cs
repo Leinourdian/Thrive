@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Godot;
 
 /// <summary>
 ///   Handles logic in the pause menu
 /// </summary>
+[SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification =
+    "We don't manually dispose Godot derived types")]
 public class PauseMenu : CustomDialog
 {
     [Export]
@@ -36,6 +39,7 @@ public class PauseMenu : CustomDialog
     private OptionsMenu optionsMenu = null!;
     private NewSaveMenu saveMenu = null!;
     private CustomConfirmationDialog unsavedProgressWarning = null!;
+    private AnimationPlayer animationPlayer = null!;
 
     /// <summary>
     ///   The assigned pending exit type, will be used to specify what kind of
@@ -44,7 +48,7 @@ public class PauseMenu : CustomDialog
     private ExitType exitType;
 
     [Signal]
-    public delegate void OnClosed();
+    public delegate void OnResumed();
 
     /// <summary>
     ///   Triggered when the user hits ESC to open the pause menu
@@ -179,6 +183,7 @@ public class PauseMenu : CustomDialog
         optionsMenu = GetNode<OptionsMenu>(OptionsMenuPath);
         saveMenu = GetNode<NewSaveMenu>(SaveMenuPath);
         unsavedProgressWarning = GetNode<CustomConfirmationDialog>(UnsavedProgressWarningPath);
+        animationPlayer = GetNode<AnimationPlayer>("AnimationPlayer");
     }
 
     [RunOnKeyDown("ui_cancel", Priority = Constants.PAUSE_MENU_CANCEL_PRIORITY)]
@@ -188,7 +193,8 @@ public class PauseMenu : CustomDialog
         {
             ActiveMenu = ActiveMenuType.Primary;
 
-            EmitSignal(nameof(OnClosed));
+            Close();
+            EmitSignal(nameof(OnResumed));
 
             return true;
         }
@@ -196,7 +202,9 @@ public class PauseMenu : CustomDialog
         if (IsPausingBlocked)
             return false;
 
+        Open();
         EmitSignal(nameof(OnOpenWithKeyPress));
+
         return true;
     }
 
@@ -206,7 +214,9 @@ public class PauseMenu : CustomDialog
         if (IsPausingBlocked)
             return false;
 
+        Open();
         EmitSignal(nameof(OnOpenWithKeyPress));
+
         ShowHelpScreen();
         return true;
     }
@@ -218,6 +228,30 @@ public class PauseMenu : CustomDialog
 
         ActiveMenu = ActiveMenuType.Help;
         helpScreen.RandomizeEasterEgg();
+    }
+
+    public void Open()
+    {
+        if (Visible)
+            return;
+
+        animationPlayer.Play("Open");
+        GetTree().Paused = true;
+    }
+
+    public void Close()
+    {
+        if (!Visible)
+            return;
+
+        animationPlayer.Play("Close");
+        GetTree().Paused = false;
+    }
+
+    public void OpenToHelp()
+    {
+        Open();
+        ShowHelpScreen();
     }
 
     public void SetNewSaveName(string name)
@@ -253,7 +287,8 @@ public class PauseMenu : CustomDialog
     private void ClosePressed()
     {
         GUICommon.Instance.PlayButtonPressSound();
-        EmitSignal(nameof(OnClosed));
+        Close();
+        EmitSignal(nameof(OnResumed));
     }
 
     private void ReturnToMenuPressed()
@@ -376,7 +411,8 @@ public class PauseMenu : CustomDialog
         ActiveMenu = ActiveMenuType.Primary;
 
         // Close this first to get the menus out of the way to capture the save screenshot
-        EmitSignal(nameof(OnClosed));
+        Hide();
+        EmitSignal(nameof(OnResumed));
         EmitSignal(nameof(MakeSave), name);
     }
 

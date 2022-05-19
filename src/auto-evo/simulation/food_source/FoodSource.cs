@@ -58,7 +58,7 @@
                             glucoseCreated += process.Process.Outputs[glucose];
                         }
 
-                        if (process.Process.Outputs.ContainsKey(atp))
+                        if (process.Process.Outputs.TryGetValue(atp, out var atpAmount))
                         {
                             compoundOutput += process.Process.Outputs[atp];
                         }

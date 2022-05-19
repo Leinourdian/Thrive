@@ -34,7 +34,6 @@
             //          added parameters cache and patch
             //var compoundUseScore = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, true);
 
-
             var energyGenerated = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, true, totalCompound);
 
             var energyBalanceInfo = simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch);

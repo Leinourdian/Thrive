@@ -246,7 +246,7 @@ public class MicrobeAI
         }
 
         // If there are no threats, look for a chunk to eat
-        if (!microbe.Species.MembraneType.CellWall)
+        if (!microbe.CellTypeProperties.MembraneType.CellWall)
         {
             Vector3? targetChunk = GetNearestChunkItem(data.AllChunks, data.AllMicrobes, random)?.Translation;
             if (targetChunk.HasValue)
@@ -267,6 +267,9 @@ public class MicrobeAI
             EngagePrey(prey.Value, random, engulfPrey);
             return;
         }
+
+        // There is no reason to be engulfing at this stage
+        microbe.State = Microbe.MicrobeState.Normal;
 
         // Otherwise just wander around and look for compounds
         if (SpeciesActivity > Constants.MAX_SPECIES_ACTIVITY / 10)
@@ -601,9 +604,6 @@ public class MicrobeAI
 
     private void SeekCompounds(Random random, MicrobeAICommonData data)
     {
-        // If we are still engulfing for some reason, stop
-        microbe.State = Microbe.MicrobeState.Normal;
-
         // More active species just try to get distance to avoid over-clustering
         if (RollCheck(SpeciesActivity, Constants.MAX_SPECIES_ACTIVITY + (Constants.MAX_SPECIES_ACTIVITY / 2), random))
         {
@@ -845,6 +845,10 @@ public class MicrobeAI
         foreach (var speciesMicrobe in ownSpeciesMicrobes)
         {
             if (speciesMicrobe.SignalCommand == MicrobeSignalCommand.None)
+                continue;
+
+            // Don't detect your own signals
+            if (speciesMicrobe == microbe)
                 continue;
 
             var distance = DistanceFromMe(speciesMicrobe.Translation);
