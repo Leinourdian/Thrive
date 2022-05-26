@@ -171,7 +171,9 @@ public class Mutations
 
         mutatedOrganelles.Clear();
 
-        // Chance to replace each organelle randomly
+        float deletionChance = (random.NextFloat() + Constants.MUTATION_DELETION_RATE) / 2.0f;
+
+        // Chance to replace each organelle randomly. Might wanna randomize list
         foreach (var parentOrganelle in parentOrganelles)
         {
             var organelle = (OrganelleTemplate)parentOrganelle.Clone();
@@ -179,8 +181,9 @@ public class Mutations
             // Chance to replace or remove if not a nucleus
             if (organelle.Definition != nucleus)
             {
-                if (random.Next(0.0f, 1.0f) < Constants.MUTATION_DELETION_RATE / Math.Sqrt(parentOrganelles.Count))
+                if (random.Next(0.0f, 1.0f) < deletionChance)//Constants.MUTATION_DELETION_RATE / Math.Sqrt(parentOrganelles.Count))
                 {
+                    deletionChance -= 0.1f;
                     // Don't copy over this organelle, removing this one from the new species
                     continue;
                 }
@@ -206,7 +209,9 @@ public class Mutations
         }
 
         // We can insert new organelles at the end of the list
-        for (int i = 0; i < 6; ++i)
+        // used to be i < 6
+        float creationChance = random.Next(11) / 10.0f;
+        for (int i = 0; i < 3 + random.Next(6); ++i)
         {
             if (random.Next(0.0f, 1.0f) < Constants.MUTATION_CREATION_RATE)
             {
@@ -252,6 +257,7 @@ public class Mutations
         }
 
         var islandHexes = mutatedOrganelles.GetIslandHexes();
+        int rng = random.Next(100);
 
         // Attach islands
         while (islandHexes.Count > 0)
@@ -261,6 +267,7 @@ public class Mutations
             // Compute shortest hex distance
             Hex minSubHex = default;
             int minDistance = int.MaxValue;
+            var mainHexJee = mainHexes.First();
             foreach (var mainHex in mainHexes)
             {
                 foreach (var islandHex in islandHexes)
@@ -269,6 +276,7 @@ public class Mutations
                     int distance = (Math.Abs(sub.Q) + Math.Abs(sub.Q + sub.R) + Math.Abs(sub.R)) / 2;
                     if (distance < minDistance)
                     {
+                        mainHexJee = mainHex;
                         minDistance = distance;
                         minSubHex = sub;
 
@@ -283,6 +291,13 @@ public class Mutations
                     break;
             }
 
+            //if (minDistance <= 1)
+            //{
+            //    Console.WriteLine("Skipped " + rng);
+            //    break;
+            //}
+
+            //check for distance of 1? maybe a mainHex can touch an islandHex? maybe islandHex doesn't move properly? Math.Ceiling
             minSubHex.Q = (int)(minSubHex.Q * (minDistance - 1.0) / minDistance);
             minSubHex.R = (int)(minSubHex.R * (minDistance - 1.0) / minDistance);
 
@@ -290,6 +305,8 @@ public class Mutations
             {
                 // Exactly symmetrical islands. Avoid infinite loop by using this value
                 minSubHex = new Hex(1, 0);
+                Console.WriteLine("(0, 0), distance " + minDistance + " =========================================================="); //this can be 1 right from the start and stay that way
+                //break;
             }
 
             // Move all island organelles by minSubHex
@@ -297,9 +314,12 @@ public class Mutations
                          o => islandHexes.Any(h =>
                              o.Definition.GetRotatedHexes(o.Orientation).Contains(h - o.Position))))
             {
+                Console.WriteLine("organelle is at " + organelle.Position + ", minDistance is " + minDistance + ", main hex is " + mainHexJee);
                 organelle.Position -= minSubHex;
+                Console.WriteLine(rng + " moved (" + minSubHex.Q + ", " + minSubHex.R + "), organelle is at " + organelle.Position);
             }
 
+            Console.WriteLine("hmm");
             islandHexes = mutatedOrganelles.GetIslandHexes();
         }
     }

@@ -186,17 +186,23 @@
 
             foreach (var niche in niches) // changed: nothing but is this supposed to be O(n^2)?
             {
+                float totalEnergyAvailable = niche.TotalEnergyAvailable() * 1000000;
+
                 // If there isn't a source of energy here, no need for more calculations
-                if (niche.TotalEnergyAvailable() <= MathUtils.EPSILON)
+                //if (niche.TotalEnergyAvailable() <= MathUtils.EPSILON)
+                if (totalEnergyAvailable <= MathUtils.EPSILON)
                     continue;
 
                 var fitnessBySpecies = new Dictionary<MicrobeSpecies, float>();
-                var totalNicheFitness = 0.0f;
+                var floorBySpecies = new Dictionary<MicrobeSpecies, float>();
+                float totalNicheFitness = 0.0f;
+                //float highestFitness = 0.0f;
                 foreach (var currentSpecies in species)
                 {
                     float thisSpeciesFitness;
+                    float thisSpeciesFloor;
 
-                    if (strictCompetition)
+                    if (false) //strictCompetition)
                     {
                         // Softly enforces https://en.wikipedia.org/wiki/Competitive_exclusion_principle
                         // by exaggerating fitness differences
@@ -207,11 +213,17 @@
                     }
                     else
                     {
-                        thisSpeciesFitness = Mathf.Max(niche.FitnessScore(currentSpecies, cache).Item1, 0.0f);
+                        var fitnessScore = niche.FitnessScore(currentSpecies, cache);
+                        thisSpeciesFitness = Mathf.Pow(Mathf.Max(fitnessScore.Item1, 0.0f), 1);// 3);
+                        thisSpeciesFloor = Mathf.Max(fitnessScore.Item2, 0.0f);
                     }
 
                     fitnessBySpecies[currentSpecies] = thisSpeciesFitness;
-                    totalNicheFitness += thisSpeciesFitness;
+                    totalNicheFitness += thisSpeciesFitness; // is zero if floor is 1.0f
+                    floorBySpecies[currentSpecies] = thisSpeciesFloor;
+
+                    //if (thisSpeciesFitness > highestFitness)
+                    //    highestFitness = thisSpeciesFitness;
                 }
 
                 // If no species can get energy this way, no need for more calculations
@@ -220,14 +232,36 @@
                     continue;
                 }
 
-                foreach (var currentSpecies in species)
-                {
-                    var energy = fitnessBySpecies[currentSpecies] * niche.TotalEnergyAvailable() / totalNicheFitness;
 
-                    // If this species can't gain energy here, don't count it (this also prevents it from appearing
-                    // in food sources (if that's not what we want), if the species doesn't use this food source
-                    if (energy <= MathUtils.EPSILON)
+                var fitnesses = species.OrderByDescending(_ => fitnessBySpecies[_]).Select(_ => fitnessBySpecies[_]).ToList();
+                float lastFloor = 1.0f;
+                float currentEnergyAvailable = totalEnergyAvailable;
+                //foreach (var currentSpecies in species)
+                //foreach (var currentSpecies in species.OrderByDescending(_ => fitnessBySpecies[_]))
+                foreach (var currentSpecies in species.OrderByDescending(_ => floorBySpecies[_]))
+                {
+                    float fitness = fitnessBySpecies[currentSpecies];
+                    float floor = floorBySpecies[currentSpecies];
+
+                    if (false)//floor >= lastFloor - 0.00f || fitness < fitnesses[0])
+                    {
+                        totalNicheFitness -= fitness;
                         continue;
+                    }
+
+                    float energy = 0.0f;
+                    //float energyChunk = 1.0f - floorBySpecies[currentSpecies];
+                    //float energyChunk = lastFloor - floorBySpecies[currentSpecies];
+
+                    //energy = totalEnergyAvailable * energyChunk * fitness / totalNicheFitness
+                    //energy = totalEnergyAvailable * energyChunk;
+                    energy = (currentEnergyAvailable - floor * totalEnergyAvailable) * fitness / totalNicheFitness;
+
+                    if (energy <= MathUtils.EPSILON)
+                    {
+                        totalNicheFitness -= fitness;
+                        continue;
+                    }
 
                     energyBySpecies[currentSpecies] += energy;
 
@@ -236,6 +270,29 @@
                         populations.AddTrackedEnergyForSpecies(currentSpecies, patch, niche,
                             fitnessBySpecies[currentSpecies], energy, totalNicheFitness);
                     }
+
+                    currentEnergyAvailable -= energy;
+
+                    totalNicheFitness -= fitness;
+
+                    fitnesses = fitnesses.Skip(1).ToList(); //fitnesses.RemoveAt(0);
+
+                    lastFloor = floor;
+
+                    //var energy = fitnessBySpecies[currentSpecies] * niche.TotalEnergyAvailable() / totalNicheFitness;
+
+                    //// If this species can't gain energy here, don't count it (this also prevents it from appearing
+                    //// in food sources (if that's not what we want), if the species doesn't use this food source
+                    //if (energy <= MathUtils.EPSILON)
+                    //    continue;
+
+                    //energyBySpecies[currentSpecies] += energy;
+
+                    //if (trackEnergy)
+                    //{
+                    //    populations.AddTrackedEnergyForSpecies(currentSpecies, patch, niche,
+                    //        fitnessBySpecies[currentSpecies], energy, totalNicheFitness);
+                    //}
                 }
             }
 

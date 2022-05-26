@@ -29,25 +29,25 @@
         public abstract IFormattable GetDescription();
 
         // changed: added cache, patch, bool
-        protected float EnergyGenerationScore(MicrobeSpecies species, Compound compound, SimulationCache cache, Patch patch, bool compoundIsSearchable, float compoundAmount)
+        protected (float, float) EnergyGenerationScore(MicrobeSpecies species, Compound compound, SimulationCache cache, Patch patch,
+            bool compoundIsSearchable, float compoundAmount)
         {
-
             // add floor calculation
             float glucoseCreated = 0.0f;
             float glucoseInput = 0.0f;
-            float glucoseOutput = 0.0f; // silly name, it's actually atpOutput
+            float glucoseATPOutput = 0.0f; // silly name, it's actually atpOutputFromGlucose
             float compoundInput = 0.0f;
-            float compoundOutput = 0.0f;
+            float compoundATPOutput = 0.0f;
             var energyCreationScore = 0.0f;
 
             foreach (var organelle in species.Organelles)
             {
                 foreach (var process in organelle.Definition.RunnableProcesses)
                 {
-                    if (process.Process.Inputs.ContainsKey(glucose))
+                    if (process.Process.Inputs.ContainsKey(glucose) && compound != glucose)
                     {
                         glucoseInput += process.Process.Inputs[glucose];
-                        glucoseOutput += process.Process.Outputs[atp];
+                        glucoseATPOutput += process.Process.Outputs[atp];
                     }
                     else if (process.Process.Inputs.ContainsKey(compound))
                     {
@@ -58,13 +58,29 @@
                             glucoseCreated += process.Process.Outputs[glucose];
                         }
 
-                        if (process.Process.Outputs.TryGetValue(atp, out var atpAmount))
+                        if (process.Process.Outputs.ContainsKey(atp)) //TryGetValue(atp, out var atpAmount))
                         {
-                            compoundOutput += process.Process.Outputs[atp];
+                            compoundATPOutput += process.Process.Outputs[atp];
                         }
                     }
                 }
             }
+
+            //float glucoseAmount = 0.0f;
+            //if (compoundInput != 0.0f)
+            //{
+            //    glucoseAmount += compoundAmount * glucoseCreated / compoundInput;
+            //}
+
+            //if (glucoseInput != 0.0f)
+            //{
+            //    energyCreationScore += glucoseAmount * glucoseATPOutput / glucoseInput;
+            //}
+
+            //if (compoundATPOutput != 0.0f)
+            //{
+            //    energyCreationScore += compoundAmount * compoundATPOutput / compoundInput;
+            //}
 
             float glucoseAmount = 0.0f;
             if (compoundInput != 0.0f)
@@ -74,31 +90,32 @@
 
             if (glucoseInput != 0.0f)
             {
-                energyCreationScore += (compoundAmount + glucoseAmount) * (glucoseOutput / glucoseInput);
+                energyCreationScore += Math.Min(glucoseCreated, glucoseInput) * glucoseATPOutput / glucoseInput;
             }
 
-            if (compoundOutput != 0.0f)
+            if (compoundATPOutput != 0.0f)
             {
-                energyCreationScore += compoundAmount * compoundInput / compoundOutput;
+                energyCreationScore += compoundATPOutput;
             }
 
-            if (energyCreationScore >= 0.0f)
-            {
-            }
-            else
-            {
-                Console.WriteLine("glucoseAmount: " + glucoseAmount +
-                    "\nglucoseCreated: " + glucoseCreated +
-                    "\ncompoundAmount: " + compoundAmount +
-                    "\ncompoundInput: " + compoundInput +
-                    "\ncompoundOutput: " + compoundOutput +
-                    "\nglucoseInput: " + glucoseInput +
-                    "\nglucoseOutput: " + glucoseOutput +
-                    "\nenergyCreationScore: " + energyCreationScore +
-                    "\nspecies: " + species.FormattedName);
-            }
+            //if (energyCreationScore >= 0.0f)
+            //{
+            //}
+            //else
+            //{
+            //    Console.WriteLine("glucoseAmount: " + glucoseAmount +
+            //        "\nglucoseCreated: " + glucoseCreated +
+            //        "\ncompoundAmount: " + compoundAmount +
+            //        "\ncompoundInput: " + compoundInput +
+            //        "\ncompoundOutput: " + compoundOutput +
+            //        "\nglucoseInput: " + glucoseInput +
+            //        "\nglucoseOutput: " + glucoseOutput +
+            //        "\nenergyCreationScore: " + energyCreationScore +
+            //        "\nspecies: " + species.FormattedName);
+            //}
 
-            return energyCreationScore;
+            return (energyCreationScore, compoundInput);
+            //return (energyCreationScore, compoundATPOutput, compoundATPOutput / compoundInput);
 
 
 

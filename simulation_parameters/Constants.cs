@@ -426,10 +426,10 @@ public static class Constants
     public const float MAX_OPACITY_MUTATION = 0.01f;
 
     // Mutation Variables
-    public const float MUTATION_BACTERIA_TO_EUKARYOTE = 0.01f;
-    public const float MUTATION_CREATION_RATE = 0.25f;
+    public const float MUTATION_BACTERIA_TO_EUKARYOTE = 0.05f;//0.01f;
+    public const float MUTATION_CREATION_RATE = 0.33f;//0.25f;
     public const float MUTATION_NEW_ORGANELLE_CHANCE = 0.25f;
-    public const float MUTATION_DELETION_RATE = 0.05f;
+    public const float MUTATION_DELETION_RATE = 0.3f; //0.05f;
     public const float MUTATION_REPLACEMENT_RATE = 0.1f;
 
     // Max fear and aggression and activity
@@ -492,7 +492,7 @@ public static class Constants
     /// <summary>
     ///   Populations of species that are under this will be killed off by auto-evo
     /// </summary>
-    public const int AUTO_EVO_MINIMUM_VIABLE_POPULATION = 20;
+    public const int AUTO_EVO_MINIMUM_VIABLE_POPULATION = 1; //20;
 
     // Auto evo population algorithm tweak variables
     // TODO: move all of these into auto-evo_parameters.json

@@ -125,6 +125,13 @@ public class ProcessSystem
 
         // Add movement consumption together
         result.BaseMovement = Constants.BASE_MOVEMENT_ATP_COST * hexCount;
+
+        // changed: added this to incentivize the Nucleus
+        if (hasNucleus)
+        {
+            result.BaseMovement /= 2;
+        }
+
         result.AddConsumption("baseMovement", result.BaseMovement);
         var totalMovementConsumption = movementATPConsumption + result.BaseMovement;
 

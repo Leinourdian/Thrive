@@ -58,10 +58,15 @@ public static class MicrobeInternalCalculations
 
         var organellesList = organelles.ToList();
 
+        bool hasNucleus = false;
+
         foreach (var organelle in organellesList)
         {
             microbeMass += organelle.Definition.Mass;
             size += organelle.Definition.HexCount;
+
+            if (organelle.Definition.InternalName == "nucleus")
+                hasNucleus = true;
 
             if (organelle.Definition.HasComponentFactory<MovementComponentFactory>())
             {
@@ -104,6 +109,9 @@ public static class MicrobeInternalCalculations
 
         float baseMovementForce = Constants.CELL_BASE_THRUST * Mathf.Sqrt(size) * // changed: added sqrt(size)
             (membraneType.MovementFactor - membraneRigidity * Constants.MEMBRANE_RIGIDITY_MOBILITY_MODIFIER);
+
+        if (hasNucleus)
+            baseMovementForce *= 2;
 
         float finalSpeed = (baseMovementForce + organelleMovementForce) / microbeMass;
 
