@@ -68,7 +68,7 @@ public class ToolTipManager : CanvasLayer
             display = value;
 
             if (previousToolTip != null)
-                FinalizeToolTipVisibility(previousToolTip, false);
+                UpdateToolTipVisibility(previousToolTip, false);
 
             if (display)
             {
@@ -105,96 +105,44 @@ public class ToolTipManager : CanvasLayer
         {
             displayTimer -= delta;
 
+            // To avoid tooltip "jumping" to the correct position once it's visible
+            UpdateCurrentTooltip(0);
+
             if (displayTimer < 0)
             {
                 lastMousePosition = GetViewport().GetMousePosition();
-                FinalizeToolTipVisibility(MainToolTip, true);
+                UpdateToolTipVisibility(MainToolTip, true);
             }
         }
 
-        // Adjust position and size
         if (MainToolTip.ToolTipNode.Visible)
-        {
-            Vector2 position;
-            var offset = 0.0f;
-
-            switch (MainToolTip.Positioning)
-            {
-                case ToolTipPositioning.LastMousePosition:
-                    position = lastMousePosition;
-                    offset = Constants.TOOLTIP_OFFSET;
-                    break;
-                case ToolTipPositioning.FollowMousePosition:
-                    position = GetViewport().GetMousePosition();
-                    offset = Constants.TOOLTIP_OFFSET;
-                    break;
-                case ToolTipPositioning.ControlBottomRightCorner:
-                {
-                    var control = ToolTipHelper.GetControlAssociatedWithToolTip(MainToolTip);
-                    if (control != null)
-                    {
-                        position = new Vector2(
-                            control.RectGlobalPosition.x + control.RectSize.x,
-                            control.RectGlobalPosition.y + control.RectSize.y);
-                    }
-                    else
-                    {
-                        position = new Vector2(0, 0);
-                        GD.PrintErr("Failed to find control associated with main tooltip");
-                    }
-
-                    break;
-                }
-
-                default:
-                    throw new Exception("Invalid tooltip positioning type");
-            }
-
-            var screenSize = GetViewport().GetVisibleRect().Size;
-
-            // Clamp tooltip position so it doesn't go offscreen
-            // TODO: Take into consideration of viewport (window) resizing for the offsetting.
-            MainToolTip.ToolTipNode.RectPosition = new Vector2(
-                Mathf.Clamp(position.x + offset, 0, screenSize.x - MainToolTip.ToolTipNode.RectSize.x),
-                Mathf.Clamp(position.y + offset, 0, screenSize.y - MainToolTip.ToolTipNode.RectSize.y));
-
-            MainToolTip.ToolTipNode.RectSize = Vector2.Zero;
-
-            // Handle temporary tooltips/popup
-            if (currentIsTemporary && hideTimer >= 0)
-            {
-                hideTimer -= delta;
-
-                if (hideTimer < 0)
-                {
-                    currentIsTemporary = false;
-                    FinalizeToolTipVisibility(MainToolTip, false);
-                    MainToolTip = null;
-                }
-            }
-        }
+            UpdateCurrentTooltip(delta);
     }
 
     public override void _Input(InputEvent @event)
     {
-        if (MainToolTip == null)
-            return;
-
-        if (@event is InputEventMouseButton mouseButton &&
-            mouseButton.Pressed && MainToolTip.HideOnMousePress)
+        if (MainToolTip?.HideOnMouseAction == true)
         {
-            // This is to avoid flickering when smashing mouse press multiple times
-            // on the transient tooltip
-            if (currentIsTemporary && !MainToolTip.ToolTipNode.Visible)
-                return;
-
-            FinalizeToolTipVisibility(MainToolTip, false);
-            displayTimer = MainToolTip.DisplayDelay;
-
-            if (currentIsTemporary)
+            // For mouse press, only trigger when it's button down, we don't want the tooltip to be hidden
+            // the second the mouse is released
+            // NOTE: Notice mouse motion needs extra check for zero vector relative value,
+            // see: https://github.com/godotengine/godot/issues/20357
+            if ((@event is InputEventMouseButton button && button.Pressed) ||
+                (@event is InputEventMouseMotion motion && motion.Relative != Vector2.Zero))
             {
-                currentIsTemporary = false;
-                MainToolTip = null;
+                // This is to avoid flickering when smashing mouse press multiple times
+                // on the transient tooltip
+                if (currentIsTemporary && !MainToolTip.ToolTipNode.Visible)
+                    return;
+
+                UpdateToolTipVisibility(MainToolTip, false);
+                displayTimer = MainToolTip.DisplayDelay;
+
+                if (currentIsTemporary)
+                {
+                    currentIsTemporary = false;
+                    MainToolTip = null;
+                }
             }
         }
     }
@@ -213,7 +161,7 @@ public class ToolTipManager : CanvasLayer
         }
 
         popup.Description = message;
-        popup.HideOnMousePress = true;
+        popup.HideOnMouseAction = true;
         popup.TransitionType = ToolTipTransitioning.Fade;
         popup.DisplayDelay = 0;
 
@@ -339,6 +287,89 @@ public class ToolTipManager : CanvasLayer
         return groupNode;
     }
 
+    /// <summary>
+    ///   Adjusts <see cref="MainToolTip"/>'s position and size.
+    /// </summary>
+    private void UpdateCurrentTooltip(float delta)
+    {
+        if (MainToolTip == null)
+            return;
+
+        Vector2 position;
+        var offset = new Vector2(Constants.TOOLTIP_OFFSET, Constants.TOOLTIP_OFFSET);
+
+        switch (MainToolTip.Positioning)
+        {
+            case ToolTipPositioning.LastMousePosition:
+                position = lastMousePosition;
+                break;
+            case ToolTipPositioning.FollowMousePosition:
+                position = GetViewport().GetMousePosition();
+                break;
+            case ToolTipPositioning.ControlBottomRightCorner:
+            {
+                var control = ToolTipHelper.GetControlAssociatedWithToolTip(MainToolTip);
+                if (control != null)
+                {
+                    position = new Vector2(
+                        control.RectGlobalPosition.x + control.RectSize.x, control.RectGlobalPosition.y);
+                    offset = new Vector2(0, control.RectSize.y);
+                }
+                else
+                {
+                    position = new Vector2(0, 0);
+                    GD.PrintErr("Failed to find control associated with main tooltip");
+                }
+
+                break;
+            }
+
+            default:
+                throw new Exception("Invalid tooltip positioning type");
+        }
+
+        var screenRect = GetViewport().GetVisibleRect();
+        var newPos = new Vector2(position.x + offset.x, position.y + offset.y);
+        var tooltipSize = MainToolTip.ToolTipNode.RectSize;
+
+        if (newPos.x + tooltipSize.x > screenRect.Size.x)
+        {
+            newPos.x -= tooltipSize.x + offset.x;
+
+            if (newPos.x < screenRect.Position.x)
+                newPos.x = position.x + offset.x;
+        }
+
+        if (newPos.y + tooltipSize.y > screenRect.Size.y)
+        {
+            newPos.y -= tooltipSize.y + offset.y;
+
+            if (newPos.y < screenRect.Position.y)
+                newPos.y = position.y + offset.y;
+        }
+
+        // Clamp tooltip position so it doesn't go offscreen
+        // TODO: Take into account viewport (window) resizing for the offsetting.
+        MainToolTip.ToolTipNode.RectPosition = new Vector2(
+            Mathf.Clamp(newPos.x, 0, screenRect.Size.x - tooltipSize.x),
+            Mathf.Clamp(newPos.y, 0, screenRect.Size.y - tooltipSize.y));
+
+        MainToolTip.ToolTipNode.RectSize = Vector2.Zero;
+
+        // Handle temporary tooltips/popup
+        if (currentIsTemporary && hideTimer >= 0)
+        {
+            hideTimer -= delta;
+
+            if (hideTimer < 0)
+            {
+                currentIsTemporary = false;
+                UpdateToolTipVisibility(MainToolTip, false);
+                MainToolTip = null;
+            }
+        }
+    }
+
     private Control? GetGroup(string name, bool verbose = true)
     {
         foreach (var group in tooltips.Keys)
@@ -372,7 +403,7 @@ public class ToolTipManager : CanvasLayer
         }
     }
 
-    private void FinalizeToolTipVisibility(ICustomToolTip tooltip, bool visible)
+    private void UpdateToolTipVisibility(ICustomToolTip tooltip, bool visible)
     {
         if (tooltip.ToolTipNode.Visible == visible)
             return;
@@ -412,7 +443,7 @@ public class ToolTipManager : CanvasLayer
         {
             foreach (var tooltip in tooltips[group])
             {
-                FinalizeToolTipVisibility(tooltip, false);
+                UpdateToolTipVisibility(tooltip, false);
             }
         }
     }

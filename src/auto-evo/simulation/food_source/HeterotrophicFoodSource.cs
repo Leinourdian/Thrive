@@ -12,12 +12,12 @@
         private readonly float preySpeed;
         private readonly float totalEnergy;
 
-        public HeterotrophicFoodSource(Patch patch, MicrobeSpecies prey)
+        public HeterotrophicFoodSource(Patch patch, MicrobeSpecies prey, SimulationCache simulationCache)
         {
             this.prey = prey;
             this.patch = patch;
-            preyHexSize = prey.BaseHexSize;
-            preySpeed = prey.BaseSpeed;
+            preyHexSize = simulationCache.GetBaseHexSizeForSpecies(prey);
+            preySpeed = simulationCache.GetBaseSpeedForSpecies(prey);
             patch.SpeciesInPatch.TryGetValue(prey, out long population);
             // changed: not yet but this scales to billions.
             //          size needs to concider population calculation.
@@ -41,7 +41,7 @@
 
             var microbeSpeciesHexSize = microbeSpecies.BaseHexSize;
             var predatorSpeed = microbeSpecies.BaseSpeed;
-            predatorSpeed += simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch).FinalBalance; // changed: not yet but ad to this
+            predatorSpeed += simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch.Biome).FinalBalance; // changed: not yet but ad to this
 
             // It's great if you can engulf this prey, but only if you can catch it
             var engulfScore = 0.0f;
@@ -57,7 +57,7 @@
             var oxytoxyScore = 0.0f;
             foreach (var organelle in microbeSpecies.Organelles)
             {
-                if (organelle.Definition.HasComponentFactory<PilusComponentFactory>())
+                if (organelle.Definition.HasPilusComponent)
                 {
                     pilusScore += Constants.AUTO_EVO_PILUS_PREDATION_SCORE;
                     continue;
@@ -87,7 +87,7 @@
 
         public override IFormattable GetDescription()
         {
-            return new LocalizedString("PREDATION_FOOD_SOURCE", prey.FormattedName);
+            return new LocalizedString("PREDATION_FOOD_SOURCE", prey.FormattedNameBbCode);
         }
 
         public override float TotalEnergyAvailable()

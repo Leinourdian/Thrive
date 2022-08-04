@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 /// <summary>
 ///   Type of a cell in a multicellular species. There can be multiple instances of a cell type placed at once
 /// </summary>
+[JsonObject(IsReference = true)]
 public class CellType : ICellProperties, IPhotographable, ICloneable
 {
     [JsonConstructor]
@@ -48,6 +49,7 @@ public class CellType : ICellProperties, IPhotographable, ICloneable
     public float MembraneRigidity { get; set; }
     public Color Colour { get; set; }
     public bool IsBacteria { get; set; }
+    public float BaseRotationSpeed { get; set; }
 
     [JsonIgnore]
     public string FormattedName => TypeName;
@@ -60,6 +62,11 @@ public class CellType : ICellProperties, IPhotographable, ICloneable
         Organelles.RepositionToOrigin();
     }
 
+    public void CalculateRotationSpeed()
+    {
+        BaseRotationSpeed = MicrobeInternalCalculations.CalculateRotationSpeed(Organelles);
+    }
+
     public void UpdateNameIfValid(string newName)
     {
         if (!string.IsNullOrWhiteSpace(newName))
@@ -68,18 +75,8 @@ public class CellType : ICellProperties, IPhotographable, ICloneable
 
     public void ApplySceneParameters(Spatial instancedScene)
     {
-        var microbe = (Microbe)instancedScene;
-        microbe.IsForPreviewOnly = true;
-
-        // We need to call _Ready here as the object may not be attached to the scene yet by the photo studio
-        microbe._Ready();
-
-        var tempSpecies = new MicrobeSpecies(new MicrobeSpecies(int.MaxValue, string.Empty, string.Empty), this)
-        {
-            IsBacteria = false,
-        };
-
-        microbe.ApplySpecies(tempSpecies);
+        new MicrobeSpecies(new MicrobeSpecies(int.MaxValue, string.Empty, string.Empty), this)
+            .ApplySceneParameters(instancedScene);
     }
 
     public float CalculatePhotographDistance(Spatial instancedScene)

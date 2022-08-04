@@ -15,7 +15,7 @@
 
             this.patch = patch;
             this.compound = compound;
-            totalEnvironmentalEnergySource = patch.Biome.Compounds[this.compound].Dissolved * foodCapacityMultiplier;
+            totalEnvironmentalEnergySource = patch.Biome.Compounds[this.compound].Ambient * foodCapacityMultiplier;
         }
 
         public override (float, float) FitnessScore(Species species, SimulationCache simulationCache)
@@ -26,7 +26,7 @@
             var energyCreationScore = 1.0f; //EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, false);
 
             var energyCost = simulationCache
-                .GetEnergyBalanceForSpecies(microbeSpecies, patch)
+                .GetEnergyBalanceForSpecies(microbeSpecies, patch.Biome)
                 .TotalConsumptionStationary;
 
             return (energyCreationScore / energyCost, 1.0f);

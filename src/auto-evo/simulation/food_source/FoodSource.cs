@@ -40,6 +40,9 @@
             float compoundATPOutput = 0.0f;
             var energyCreationScore = 0.0f;
 
+            // could be useful...
+            //var processEfficiency = simulationCache.GetProcessMaximumSpeed(process, patch.Biome).Efficiency;
+
             foreach (var organelle in species.Organelles)
             {
                 foreach (var process in organelle.Definition.RunnableProcesses)

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 [gd_resource type="Theme" load_steps=56 format=2]
+=======
+[gd_resource type="Theme" load_steps=73 format=2]
+>>>>>>> master
 
 [ext_resource path="res://src/gui_common/fonts/Jura-Regular-AlmostSmaller.tres" type="DynamicFont" id=1]
 [ext_resource path="res://src/gui_common/fonts/Jura-DemiBold-Normal.tres" type="DynamicFont" id=8]
@@ -10,6 +14,19 @@
 [ext_resource path="res://src/gui_common/fonts/Lato-Regular-AlmostSmaller.tres" type="DynamicFont" id=15]
 [ext_resource path="res://src/gui_common/fonts/Lato-Bold-Regular.tres" type="DynamicFont" id=16]
 [ext_resource path="res://src/gui_common/fonts/Jura-DemiBold-AlmostSmaller.tres" type="DynamicFont" id=17]
+<<<<<<< HEAD
+=======
+[ext_resource path="res://assets/textures/gui/bevel/checkAhover.png" type="Texture" id=18]
+[ext_resource path="res://assets/textures/gui/bevel/checkBclick.png" type="Texture" id=19]
+[ext_resource path="res://assets/textures/gui/bevel/checkBhover.png" type="Texture" id=20]
+[ext_resource path="res://src/gui_common/fonts/Lato-Bold-Small.tres" type="DynamicFont" id=21]
+[ext_resource path="res://src/gui_common/fonts/Lato-Italic-Small.tres" type="DynamicFont" id=22]
+[ext_resource path="res://src/gui_common/fonts/Lato-BoldItalic-Small.tres" type="DynamicFont" id=23]
+[ext_resource path="res://assets/textures/gui/bevel/radioA.png" type="Texture" id=24]
+[ext_resource path="res://assets/textures/gui/bevel/radioB.png" type="Texture" id=25]
+[ext_resource path="res://assets/textures/gui/bevel/radioAhover.png" type="Texture" id=26]
+[ext_resource path="res://assets/textures/gui/bevel/radioBhover.png" type="Texture" id=27]
+>>>>>>> master
 
 [sub_resource type="StyleBoxFlat" id=1]
 content_margin_left = 5.0
@@ -448,6 +465,7 @@ CheckBox/colors/font_color_pressed = Color( 1, 1, 1, 1 )
 CheckBox/constants/check_vadjust = 0
 CheckBox/constants/hseparation = 4
 CheckBox/fonts/font = ExtResource( 8 )
+<<<<<<< HEAD
 CheckBox/icons/PressedClicked = null
 CheckBox/icons/PressedHovered = null
 CheckBox/icons/PressedNormal = null
@@ -458,6 +476,24 @@ CheckBox/icons/checked = null
 CheckBox/icons/radio_checked = null
 CheckBox/icons/radio_unchecked = null
 CheckBox/icons/unchecked = null
+=======
+CheckBox/icons/PressedClicked = ExtResource( 19 )
+CheckBox/icons/PressedHovered = ExtResource( 20 )
+CheckBox/icons/PressedNormal = ExtResource( 5 )
+CheckBox/icons/RadioPressedClicked = ExtResource( 27 )
+CheckBox/icons/RadioPressedHovered = ExtResource( 27 )
+CheckBox/icons/RadioPressedNormal = ExtResource( 25 )
+CheckBox/icons/RadioUnpressedClicked = ExtResource( 26 )
+CheckBox/icons/RadioUnpressedHovered = ExtResource( 26 )
+CheckBox/icons/RadioUnpressedNormal = ExtResource( 24 )
+CheckBox/icons/UnpressedClicked = ExtResource( 20 )
+CheckBox/icons/UnpressedHovered = ExtResource( 18 )
+CheckBox/icons/UnpressedNormal = ExtResource( 6 )
+CheckBox/icons/checked = ExtResource( 5 )
+CheckBox/icons/radio_checked = ExtResource( 25 )
+CheckBox/icons/radio_unchecked = ExtResource( 24 )
+CheckBox/icons/unchecked = ExtResource( 6 )
+>>>>>>> master
 CheckBox/styles/disabled = SubResource( 6 )
 CheckBox/styles/focus = SubResource( 7 )
 CheckBox/styles/hover = SubResource( 8 )
@@ -680,9 +716,9 @@ ProgressBar/colors/font_color_shadow = Color( 0, 0, 0, 1 )
 ProgressBar/fonts/font = null
 ProgressBar/styles/bg = null
 ProgressBar/styles/fg = null
-RichTextLabel/colors/default_color = Color( 0, 0, 0, 1 )
+RichTextLabel/colors/default_color = Color( 1, 1, 1, 1 )
 RichTextLabel/colors/font_color_selected = Color( 0, 0, 0, 1 )
-RichTextLabel/colors/font_color_shadow = Color( 0, 0, 0, 1 )
+RichTextLabel/colors/font_color_shadow = Color( 0, 0, 0, 0 )
 RichTextLabel/colors/selection_color = Color( 0, 0, 0, 1 )
 RichTextLabel/constants/line_separation = 1
 RichTextLabel/constants/shadow_as_outline = 0
@@ -690,11 +726,11 @@ RichTextLabel/constants/shadow_offset_x = 1
 RichTextLabel/constants/shadow_offset_y = 1
 RichTextLabel/constants/table_hseparation = 3
 RichTextLabel/constants/table_vseparation = 3
-RichTextLabel/fonts/bold_font = null
-RichTextLabel/fonts/bold_italics_font = null
-RichTextLabel/fonts/italics_font = null
+RichTextLabel/fonts/bold_font = ExtResource( 21 )
+RichTextLabel/fonts/bold_italics_font = ExtResource( 23 )
+RichTextLabel/fonts/italics_font = ExtResource( 22 )
 RichTextLabel/fonts/mono_font = null
-RichTextLabel/fonts/normal_font = null
+RichTextLabel/fonts/normal_font = ExtResource( 10 )
 RichTextLabel/styles/focus = null
 RichTextLabel/styles/normal = null
 ScrollContainer/styles/bg = null

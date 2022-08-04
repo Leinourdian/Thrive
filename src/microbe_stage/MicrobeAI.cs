@@ -85,6 +85,9 @@ public class MicrobeAI
     [JsonIgnore]
     private MicrobeSignalCommand receivedCommand = MicrobeSignalCommand.None;
 
+    [JsonProperty]
+    private bool hasBeenNearPlayer;
+
     public MicrobeAI(Microbe microbe)
     {
         this.microbe = microbe ?? throw new ArgumentException("no microbe given", nameof(microbe));
@@ -163,11 +166,6 @@ public class MicrobeAI
 
     private void ChooseActions(Random random, MicrobeAICommonData data, Microbe? signaler, float delta) // changed: added delta
     {
-        if (microbe.IsBeingEngulfed)
-        {
-            SetMoveSpeed(Constants.AI_BASE_MOVEMENT);
-        }
-
         // If nothing is engulfing me right now, see if there's something that might want to hunt me
         // TODO: https://github.com/Revolutionary-Games/Thrive/issues/2323
         Vector3? predator = GetNearestPredatorItem(data.AllMicrobes)?.GlobalTransform.origin;
@@ -245,20 +243,36 @@ public class MicrobeAI
                 break;
         }
 
+        // If I'm very far from the player, and I have not been near the player yet, get on stage
+        if (!hasBeenNearPlayer)
+        {
+            var player = data.AllMicrobes.Where(otherMicrobe => otherMicrobe.IsPlayerMicrobe).FirstOrDefault();
+            if (player != null)
+            {
+                if (DistanceFromMe(player.GlobalTransform.origin) > Math.Pow(Constants.SPAWN_SECTOR_SIZE, 2) * 0.75f)
+                {
+                    MoveToLocation(player.GlobalTransform.origin);
+                    return;
+                }
+
+                hasBeenNearPlayer = true;
+            }
+        }
+
         // If there are no threats, look for a chunk to eat
         if (!microbe.CellTypeProperties.MembraneType.CellWall)
         {
-            Vector3? targetChunk = GetNearestChunkItem(data.AllChunks, data.AllMicrobes, random)?.Translation;
-            if (targetChunk.HasValue)
+            var targetChunk = GetNearestChunkItem(data.AllChunks, data.AllMicrobes, random);
+            if (targetChunk != null && targetChunk.PhagocytosisStep == PhagocytosisPhase.None)
             {
-                PursueAndConsumeChunks(targetChunk.Value, random);
+                PursueAndConsumeChunks(targetChunk.Translation, random);
                 return;
             }
         }
 
         // If there are no chunks, look for living prey to hunt
         var possiblePrey = GetNearestPreyItem(data.AllMicrobes, delta); // changed: added delta
-        if (possiblePrey != null)
+        if (possiblePrey != null && possiblePrey.PhagocytosisStep == PhagocytosisPhase.None)
         {
             bool engulfPrey = microbe.CanEngulf(possiblePrey) &&
                 DistanceFromMe(possiblePrey.GlobalTransform.origin) < 10.0f * microbe.EngulfSize;
@@ -296,14 +310,15 @@ public class MicrobeAI
         // Retrieve nearest potential chunk
         foreach (var chunk in allChunks)
         {
-            if (chunk.ContainedCompounds == null)
+            if (chunk.Compounds.Compounds.Count <= 0)
                 continue;
 
-            if (microbe.EngulfSize > chunk.Size * Constants.ENGULF_SIZE_RATIO_REQ
+            if (microbe.EngulfSize > chunk.EngulfSize * Constants.ENGULF_SIZE_RATIO_REQ
                 && (chunk.Translation - microbe.Translation).LengthSquared()
-                <= (20000.0 * SpeciesFocus / Constants.MAX_SPECIES_FOCUS) + 1500.0)
+                <= (20000.0 * SpeciesFocus / Constants.MAX_SPECIES_FOCUS) + 1500.0
+                && chunk.PhagocytosisStep == PhagocytosisPhase.None)
             {
-                if (chunk.ContainedCompounds.Compounds.Any(x => microbe.Compounds.IsUseful(x.Key)))
+                if (chunk.Compounds.Compounds.Any(x => microbe.Compounds.IsUseful(x.Key)))
                 {
                     if (chosenChunk == null ||
                         (chosenChunk.Translation - microbe.Translation).LengthSquared() >
@@ -370,12 +385,12 @@ public class MicrobeAI
     private Microbe? GetNearestPreyItem(List<Microbe> allMicrobes, float delta)
     {
         //TODO: remove commented out bits
-        //var focused = focusedPrey.Value;
+
         //if (focused != null)
         //{
         //    var distanceToFocusedPrey = DistanceFromMe(focused.GlobalTransform.origin);
-        //    if (!focused.Dead && distanceToFocusedPrey <
-        //        (3500.0f * SpeciesFocus / Constants.MAX_SPECIES_FOCUS)) // changed: lowered from 3500.0f. Is boring prey remembered?
+        //    if (!focused.Dead && focused.PhagocytosisStep == PhagocytosisPhase.None && distanceToFocusedPrey <
+        //        (3500.0f * SpeciesFocus / Constants.MAX_SPECIES_FOCUS))
         //    {
         //        if (distanceToFocusedPrey < pursuitThreshold)
         //        {
@@ -386,18 +401,19 @@ public class MicrobeAI
 
         //        // If prey hasn't gotten closer by now, it's probably too fast, or juking you
         //        // Remember who focused prey is, so that you don't fall for this again
-        //        return null; // this is weird
+        //        return null;
         //    }
 
         //    focusedPrey.Value = null;
         //}
 
+        //Microbe? chosenPrey = null;
+
         // changed: added the stuff below. Gets bored too easily and can zigzag
         var focused = focusedPrey.Value;
-        // Microbe? chosenPrey = null;
         foreach (var otherMicrobe in allMicrobes)
         {
-            if (!otherMicrobe.Dead)
+            if (!otherMicrobe.Dead && otherMicrobe.PhagocytosisStep == PhagocytosisPhase.None)
             {
                 if (DistanceFromMe(otherMicrobe.GlobalTransform.origin) <
                     (2500.0f * SpeciesAggression / Constants.MAX_SPECIES_AGGRESSION) // changed: reduced float from 2500.0f
@@ -405,8 +421,9 @@ public class MicrobeAI
                 {
                     if (focused != null)
                     {
-                        if ((focused.GlobalTransform.origin - microbe.Translation).LengthSquared() >
-                        (otherMicrobe.GlobalTransform.origin - microbe.Translation).LengthSquared())
+                        if (focused.Dead || focused.PhagocytosisStep != PhagocytosisPhase.None ||
+                            (focused.GlobalTransform.origin - microbe.Translation).LengthSquared() >
+                            (otherMicrobe.GlobalTransform.origin - microbe.Translation).LengthSquared())
                         {
                             focused = otherMicrobe;
                             boredom = 0;
@@ -456,6 +473,7 @@ public class MicrobeAI
         }
 
         return focusedPrey;
+
         //Microbe? chosenPrey = null;
 
         //foreach (var otherMicrobe in allMicrobes)
@@ -506,7 +524,7 @@ public class MicrobeAI
 
             // Based on species fear, threshold to be afraid ranges from 0.8 to 1.8 microbe size.
             if (otherMicrobe.CanEngulf(microbe))  //otherMicrobe.Species != microbe.Species
-                //&& !otherMicrobe.Dead
+                //&& !otherMicrobe.Dead && && otherMicrobe.PhagocytosisStep == PhagocytosisPhase.None
                 //&& !otherMicrobe.Membrane.Type.CellWall // changed: stopped cells from being afraid of chitin warriors
                 //&& otherMicrobe.EngulfSize > microbe.EngulfSize * fleeThreshold)
             {
@@ -616,6 +634,7 @@ public class MicrobeAI
             SmellForCompounds(data);
         }
 
+        // If the AI has smelled a compound (currently only possible with a chemoreceptor), go towards it.
         if (lastSmelledCompoundPosition != null)
         {
             var distance = DistanceFromMe(lastSmelledCompoundPosition.Value);

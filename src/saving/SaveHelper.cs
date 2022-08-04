@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Godot;
 using Path = System.IO.Path;
@@ -22,6 +23,11 @@ public static class SaveHelper
         "0.5.9.0-alpha",
     };
 
+    private static readonly IReadOnlyList<MainGameState> StagesAllowingPrototypeSaving = new[]
+    {
+        MainGameState.MicrobeStage,
+    };
+
     private static DateTime? lastSave;
 
     public enum SaveOrder
@@ -32,7 +38,7 @@ public static class SaveHelper
         LastModifiedFirst,
 
         /// <summary>
-        ///   The first modified (on disk) save is first
+        ///   The first modified (on disk) save is first (oldest first)
         /// </summary>
         FirstModifiedFirst,
 
@@ -269,9 +275,9 @@ public static class SaveHelper
     }
 
     /// <summary>
-    ///   Counts the total number of saves and how many bytes they take up
+    ///   Counts the total number of saves matching the given regular expression and how many bytes they take up
     /// </summary>
-    public static (int Count, ulong DiskSpace) CountSaves(string? nameStartsWith = null)
+    public static (int Count, ulong DiskSpace) CountSaves(Regex? nameMatches = null)
     {
         int count = 0;
         ulong totalSize = 0;
@@ -279,7 +285,7 @@ public static class SaveHelper
         using var file = new File();
         foreach (var save in CreateListOfSaves())
         {
-            if (nameStartsWith == null || save.StartsWith(nameStartsWith, StringComparison.CurrentCulture))
+            if (nameMatches?.IsMatch(save) != false)
             {
                 if (file.Open(Path.Combine(Constants.SAVE_FOLDER, save), File.ModeFlags.Read) != Error.Ok)
                 {
@@ -301,7 +307,11 @@ public static class SaveHelper
     public static void DeleteSave(string saveName)
     {
         using var directory = new Directory();
-        directory.Remove(Path.Combine(Constants.SAVE_FOLDER, saveName));
+        var finalPath = Path.Combine(Constants.SAVE_FOLDER, saveName);
+        directory.Remove(finalPath);
+
+        if (directory.FileExists(finalPath))
+            GD.PrintErr("Failed to delete: ", finalPath);
     }
 
     public static void DeleteExcessSaves(string nameStartsWith, int maximumCount)
@@ -311,8 +321,10 @@ public static class SaveHelper
 
         foreach (var save in allSaveNames)
         {
-            if (save.StartsWith(nameStartsWith, StringComparison.CurrentCulture))
-                currentSaveNames.Add(save);
+            if (!save.StartsWith(nameStartsWith, StringComparison.CurrentCulture))
+                continue;
+
+            currentSaveNames.Add(save);
 
             if (currentSaveNames.Count > maximumCount && currentSaveNames.Count > 0)
             {
@@ -325,20 +337,20 @@ public static class SaveHelper
     }
 
     /// <summary>
-    ///   Deletes all saves with the given prefix except the latest one and returns the list of saves deleted
+    ///   Deletes all saves matching the given regex expression except the latest one if deleteLatest is false
     /// </summary>
-    public static List<string> CleanUpOldSavesOfType(string nameStartsWith)
+    /// <returns>the list of saves deleted</returns>
+    public static List<string> CleanUpOldSavesOfType(Regex nameMatches, bool deleteLatest = false)
     {
-        bool isLatestSave = true;
         var savesDeleted = new List<string>();
 
         foreach (var save in CreateListOfSaves())
         {
-            if (save.StartsWith(nameStartsWith, StringComparison.CurrentCulture))
+            if (nameMatches.IsMatch(save))
             {
-                if (isLatestSave)
+                if (!deleteLatest)
                 {
-                    isLatestSave = false;
+                    deleteLatest = true;
                 }
                 else
                 {
@@ -496,6 +508,9 @@ public static class SaveHelper
         if (!save.SavedProperties!.InPrototypes)
             return false;
 
+        if (StagesAllowingPrototypeSaving.Contains(save.GameState))
+            return false;
+
         SetMessageAboutPrototypeSaving(inProgress);
         return true;
     }
@@ -508,6 +523,10 @@ public static class SaveHelper
 
     private static void PerformSave(InProgressSave inProgress, Save save)
     {
+        // Ensure prototype state flag is also in the info data for use by the save list
+        save.Info.IsPrototype = save.SavedProperties?.InPrototypes ??
+            throw new InvalidOperationException("Saved properties of a save to write to disk is unset");
+
         try
         {
             save.SaveToFile();

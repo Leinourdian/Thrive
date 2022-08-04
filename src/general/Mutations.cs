@@ -33,7 +33,8 @@ public class Mutations
     /// <summary>
     ///   Creates a mutated version of a species
     /// </summary>
-    public MicrobeSpecies CreateMutatedSpecies(MicrobeSpecies parent, MicrobeSpecies mutated)
+    public MicrobeSpecies CreateMutatedSpecies(MicrobeSpecies parent, MicrobeSpecies mutated, float creationRate,
+        bool lawkOnly)
     {
         if (parent.Organelles.Count < 1)
         {
@@ -57,16 +58,16 @@ public class Mutations
         // Mutate the epithet
         if (random.Next(0, 101) < Constants.MUTATION_WORD_EDIT)
         {
-            mutated.Epithet = MutateWord(parent.Epithet);
+            mutated.Epithet = MutateWord(parent.Epithet, true);
         }
         else
         {
-            mutated.Epithet = nameGenerator.GenerateNameSection();
+            mutated.Epithet = nameGenerator.GenerateNameSection(null, true);
         }
 
         MutateBehaviour(parent, mutated);
 
-        MutateMicrobeOrganelles(parent.Organelles, mutated.Organelles, mutated.IsBacteria);
+        MutateMicrobeOrganelles(parent.Organelles, mutated.Organelles, mutated.IsBacteria, creationRate, lawkOnly);
 
         // Update the genus if the new species is different enough
         if (NewGenus(mutated, parent))
@@ -113,8 +114,7 @@ public class Mutations
         mutated.MembraneRigidity = Math.Max(Math.Min(parent.MembraneRigidity +
             random.Next(-25, 26) / 100.0f, 1), -1);
 
-        mutated.RepositionToOrigin();
-        mutated.UpdateInitialCompounds();
+        mutated.OnEdited();
 
         return mutated;
     }
@@ -122,7 +122,7 @@ public class Mutations
     /// <summary>
     ///   Creates a fully random species starting with one cytoplasm
     /// </summary>
-    public MicrobeSpecies CreateRandomSpecies(MicrobeSpecies mutated, int steps = 5)
+    public MicrobeSpecies CreateRandomSpecies(MicrobeSpecies mutated, float creationRate, bool lawkOnly, int steps = 5)
     {
         // Temporarily create species with just cytoplasm to start mutating from
         var temp = new MicrobeSpecies(int.MaxValue, string.Empty, string.Empty);
@@ -131,12 +131,12 @@ public class Mutations
 
         // Override the default species starting name to have more variability in the names
         var nameGenerator = SimulationParameters.Instance.NameGenerator;
-        temp.Epithet = nameGenerator.GenerateNameSection();
+        temp.Epithet = nameGenerator.GenerateNameSection(null, true);
         temp.Genus = nameGenerator.GenerateNameSection();
 
         for (int step = 0; step < steps; ++step)
         {
-            CreateMutatedSpecies(temp, mutated);
+            CreateMutatedSpecies(temp, mutated, creationRate, lawkOnly);
 
             temp = (MicrobeSpecies)mutated.Clone();
         }
@@ -165,13 +165,11 @@ public class Mutations
     ///   Creates a mutated version of parentOrganelles in organelles
     /// </summary>
     private void MutateMicrobeOrganelles(OrganelleLayout<OrganelleTemplate> parentOrganelles,
-        OrganelleLayout<OrganelleTemplate> mutatedOrganelles, bool isBacteria)
+        OrganelleLayout<OrganelleTemplate> mutatedOrganelles, bool isBacteria, float creationRate, bool lawkOnly)
     {
         var nucleus = SimulationParameters.Instance.GetOrganelleType("nucleus");
 
         mutatedOrganelles.Clear();
-
-        float deletionChance = (random.NextFloat() + Constants.MUTATION_DELETION_RATE) / 2.0f;
 
         // Chance to replace each organelle randomly. Might wanna randomize list
         foreach (var parentOrganelle in parentOrganelles)
@@ -181,16 +179,15 @@ public class Mutations
             // Chance to replace or remove if not a nucleus
             if (organelle.Definition != nucleus)
             {
-                if (random.Next(0.0f, 1.0f) < deletionChance)//Constants.MUTATION_DELETION_RATE / Math.Sqrt(parentOrganelles.Count))
+                if (random.Next(0.0f, 1.0f) < Constants.MUTATION_DELETION_RATE / Math.Sqrt(parentOrganelles.Count))
                 {
-                    deletionChance -= 0.1f;
                     // Don't copy over this organelle, removing this one from the new species
                     continue;
                 }
 
                 if (random.Next(0.0f, 1.0f) < Constants.MUTATION_REPLACEMENT_RATE)
                 {
-                    organelle = new OrganelleTemplate(GetRandomOrganelle(isBacteria),
+                    organelle = new OrganelleTemplate(GetRandomOrganelle(isBacteria, lawkOnly),
                         organelle.Position, organelle.Orientation);
                 }
             }
@@ -209,15 +206,13 @@ public class Mutations
         }
 
         // We can insert new organelles at the end of the list
-        // used to be i < 6
-        float creationChance = random.Next(11) / 10.0f;
-        for (int i = 0; i < 3 + random.Next(6); ++i)
+        for (int i = 0; i < Math.Ceiling(6 * creationRate); ++i)
         {
             if (random.Next(0.0f, 1.0f) < Constants.MUTATION_CREATION_RATE)
             {
                 if (random.Next(0.0f, 1.0f) < Constants.MUTATION_NEW_ORGANELLE_CHANCE)
                 {
-                    AddNewOrganelle(mutatedOrganelles, GetRandomOrganelle(isBacteria));
+                    AddNewOrganelle(mutatedOrganelles, GetRandomOrganelle(isBacteria, lawkOnly));
                 }
                 else
                 {
@@ -231,7 +226,7 @@ public class Mutations
                     }
                     else
                     {
-                        AddNewOrganelle(mutatedOrganelles, GetRandomOrganelle(isBacteria));
+                        AddNewOrganelle(mutatedOrganelles, GetRandomOrganelle(isBacteria, lawkOnly));
                     }
                 }
             }
@@ -267,7 +262,6 @@ public class Mutations
             // Compute shortest hex distance
             Hex minSubHex = default;
             int minDistance = int.MaxValue;
-            var mainHexJee = mainHexes.First();
             foreach (var mainHex in mainHexes)
             {
                 foreach (var islandHex in islandHexes)
@@ -276,7 +270,6 @@ public class Mutations
                     int distance = (Math.Abs(sub.Q) + Math.Abs(sub.Q + sub.R) + Math.Abs(sub.R)) / 2;
                     if (distance < minDistance)
                     {
-                        mainHexJee = mainHex;
                         minDistance = distance;
                         minSubHex = sub;
 
@@ -291,35 +284,21 @@ public class Mutations
                     break;
             }
 
-            //if (minDistance <= 1)
-            //{
-            //    Console.WriteLine("Skipped " + rng);
-            //    break;
-            //}
+            // Calculate the path to move island organelles.
+            // If statement is there because otherwise the path could be (0, 0).
+            if (minSubHex.Q != minSubHex.R)
+                minSubHex.Q = (int)(minSubHex.Q * (minDistance - 1.0) / minDistance);
 
-            //check for distance of 1? maybe a mainHex can touch an islandHex? maybe islandHex doesn't move properly? Math.Ceiling
-            minSubHex.Q = (int)(minSubHex.Q * (minDistance - 1.0) / minDistance);
             minSubHex.R = (int)(minSubHex.R * (minDistance - 1.0) / minDistance);
-
-            if (minSubHex.Q == 0 && minSubHex.R == 0)
-            {
-                // Exactly symmetrical islands. Avoid infinite loop by using this value
-                minSubHex = new Hex(1, 0);
-                Console.WriteLine("(0, 0), distance " + minDistance + " =========================================================="); //this can be 1 right from the start and stay that way
-                //break;
-            }
 
             // Move all island organelles by minSubHex
             foreach (var organelle in mutatedOrganelles.Where(
                          o => islandHexes.Any(h =>
                              o.Definition.GetRotatedHexes(o.Orientation).Contains(h - o.Position))))
             {
-                Console.WriteLine("organelle is at " + organelle.Position + ", minDistance is " + minDistance + ", main hex is " + mainHexJee);
                 organelle.Position -= minSubHex;
-                Console.WriteLine(rng + " moved (" + minSubHex.Q + ", " + minSubHex.R + "), organelle is at " + organelle.Position);
             }
 
-            Console.WriteLine("hmm");
             islandHexes = mutatedOrganelles.GetIslandHexes();
         }
     }
@@ -340,14 +319,14 @@ public class Mutations
         }
     }
 
-    private OrganelleDefinition GetRandomOrganelle(bool isBacteria)
+    private OrganelleDefinition GetRandomOrganelle(bool isBacteria, bool lawkOnly)
     {
         if (isBacteria)
         {
-            return SimulationParameters.Instance.GetRandomProkaryoticOrganelle(random);
+            return SimulationParameters.Instance.GetRandomProkaryoticOrganelle(random, lawkOnly);
         }
 
-        return SimulationParameters.Instance.GetRandomEukaryoticOrganelle(random);
+        return SimulationParameters.Instance.GetRandomEukaryoticOrganelle(random, lawkOnly);
     }
 
     private OrganelleTemplate GetRealisticPosition(OrganelleDefinition organelle,
@@ -496,7 +475,7 @@ public class Mutations
             >= Constants.DIFFERENCES_FOR_GENUS_SPLIT;
     }
 
-    private string MutateWord(string name)
+    private string MutateWord(string name, bool lowercase = false)
     {
         StringBuilder newName = new StringBuilder(name);
         int changeLimit = 1;
@@ -680,14 +659,17 @@ public class Mutations
         if (letterChanges < letterChangeLimit && changes == 0)
         {
             // We didnt change our word at all, try recursively until we do
-            return MutateWord(name);
+            return MutateWord(name, lowercase);
         }
 
         // Convert to lower case
-        string lowercase = newName.ToString().ToLower(CultureInfo.InvariantCulture);
+        string lower = newName.ToString().ToLower(CultureInfo.InvariantCulture);
+
+        if (lowercase)
+            return lower;
 
         // Convert first letter to upper case
-        string result = char.ToUpper(lowercase[0], CultureInfo.InvariantCulture) + lowercase.Substring(1);
+        string result = char.ToUpper(lower[0], CultureInfo.InvariantCulture) + lower.Substring(1);
 
         return result;
     }

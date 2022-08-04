@@ -38,7 +38,7 @@
 
             //var energyGenerated = EnergyGenerationScore(microbeSpecies, compound, simulationCache, patch, true, totalCompound);
 
-            var energyBalanceInfo = simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch);
+            var energyBalanceInfo = simulationCache.GetEnergyBalanceForSpecies(microbeSpecies, patch.Biome);
 
             float actualSpeed = microbeSpecies.BaseSpeed * Mathf.Clamp(energyBalanceInfo.FinalBalanceStationary /
                 (energyBalanceInfo.TotalConsumption - energyBalanceInfo.TotalConsumptionStationary), 0.0f, 1.0f);

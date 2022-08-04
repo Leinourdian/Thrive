@@ -71,8 +71,8 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
 
     private Label timeIndicator = null!;
     private Label glucoseReductionLabel = null!;
-    private Label autoEvoLabel = null!;
-    private Label externalEffectsLabel = null!;
+    private CustomRichTextLabel autoEvoLabel = null!;
+    private CustomRichTextLabel externalEffectsLabel = null!;
     private Label reportTabPatchName = null!;
     private OptionButton reportTabPatchSelector = null!;
 
@@ -108,8 +108,8 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
         reportTabPatchSelector = GetNode<OptionButton>(ReportTabPatchSelectorPath);
         timeIndicator = GetNode<Label>(TimeIndicatorPath);
         glucoseReductionLabel = GetNode<Label>(GlucoseReductionLabelPath);
-        autoEvoLabel = GetNode<Label>(AutoEvoLabelPath);
-        externalEffectsLabel = GetNode<Label>(ExternalEffectsLabelPath);
+        autoEvoLabel = GetNode<CustomRichTextLabel>(AutoEvoLabelPath);
+        externalEffectsLabel = GetNode<CustomRichTextLabel>(ExternalEffectsLabelPath);
 
         physicalConditionsIconLegends = GetNode<HBoxContainer>(PhysicalConditionsIconLegendPath);
         temperatureChart = GetNode<LineChart>(TemperatureChartPath);
@@ -142,7 +142,7 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
             reportTabPatchSelector.AddItem(patch.Name.ToString(), patch.ID);
         }
 
-        reportTabPatchSelector.Select(Editor.CurrentPatch.ID);
+        reportTabPatchSelector.Select(reportTabPatchSelector.GetItemIndex(Editor.CurrentPatch.ID));
     }
 
     public void UpdateReportTabPatchSelectorSelection(int patchID)
@@ -161,8 +161,8 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
 
     public void UpdateAutoEvoResults(string results, string external)
     {
-        autoEvoLabel.Text = results;
-        externalEffectsLabel.Text = external;
+        autoEvoLabel.ExtendedBbcode = results;
+        externalEffectsLabel.ExtendedBbcode = external;
     }
 
     public void UpdateReportTabPatchName(Patch patch)
@@ -217,7 +217,9 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
         {
             var snapshot = patch.History.ElementAt(i);
 
-            temperatureData.AddPoint(new DataPoint(snapshot.TimePeriod, snapshot.Biome.AverageTemperature)
+            var temperature = SimulationParameters.Instance.GetCompound("temperature");
+            temperatureData.AddPoint(new DataPoint(snapshot.TimePeriod,
+                snapshot.Biome.Compounds[temperature].Ambient)
             {
                 MarkerColour = temperatureData.Colour,
             });
@@ -361,14 +363,11 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
 
     public void UpdateGlucoseReduction(float value)
     {
-        var percentage = string.Format(CultureInfo.CurrentCulture, TranslationServer.Translate("PERCENTAGE_VALUE"),
-            value * 100);
+        var percentage = TranslationServer.Translate("PERCENTAGE_VALUE").FormatSafe(Math.Round(value * 100));
 
         // The amount of glucose has been reduced to {0} of the previous amount.
-        glucoseReductionLabel.Text =
-            string.Format(CultureInfo.CurrentCulture,
-                TranslationServer.Translate("THE_AMOUNT_OF_GLUCOSE_HAS_BEEN_REDUCED"),
-                percentage);
+        glucoseReductionLabel.Text = TranslationServer.Translate("THE_AMOUNT_OF_GLUCOSE_HAS_BEEN_REDUCED")
+            .FormatSafe(percentage);
     }
 
     public void UpdateTimeIndicator(double value)
@@ -381,9 +380,8 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
         if (tooltip == null)
             throw new InvalidOperationException("Could not find time indicator tooltip");
 
-        tooltip.Description = string.Format(
-            CultureInfo.CurrentCulture, TranslationServer.Translate("TIME_INDICATOR_TOOLTIP"),
-            Editor.CurrentGame.GameWorld.TotalPassedTime);
+        tooltip.Description = TranslationServer.Translate("TIME_INDICATOR_TOOLTIP")
+            .FormatSafe(Editor.CurrentGame.GameWorld.TotalPassedTime);
     }
 
     public override void OnInsufficientMP(bool playSound = true)
@@ -411,9 +409,10 @@ public class MicrobeEditorReportComponent : EditorComponentBase<IEditorReportDat
     {
         Editor.SendAutoEvoResultsToReportComponent();
         UpdateTimeIndicator(Editor.CurrentGame.GameWorld.TotalPassedTime);
-        UpdateGlucoseReduction(Constants.GLUCOSE_REDUCTION_RATE);
+        UpdateGlucoseReduction(Editor.CurrentGame.GameWorld.WorldSettings.GlucoseDecay);
         UpdateTimeline(Editor.SelectedPatch);
         UpdateReportTabPatchSelector();
+        UpdateReportTabStatistics(Editor.CurrentPatch);
     }
 
     protected override void RegisterTooltips()

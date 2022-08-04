@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 /// </remarks>
 public class OrganelleDefinition : IRegistryType
 {
+    // TODO: split the following comment to the actual properties in this class:
     /*
     Organelle attributes:
     mass:   How heavy an organelle is. Affects speed, mostly.
@@ -128,6 +129,8 @@ public class OrganelleDefinition : IRegistryType
     /// </summary>
     public List<Hex> Hexes = null!;
 
+    public Dictionary<string, int>? Enzymes;
+
     /// <summary>
     ///   The compounds this organelle consists of (how many resources are needed to duplicate this)
     /// </summary>
@@ -167,6 +170,11 @@ public class OrganelleDefinition : IRegistryType
     ///   Can this organelle only be placed once
     /// </summary>
     public bool Unique;
+
+    /// <summary>
+    ///   Determines whether this organelle appears in LAWK-only games
+    /// </summary>
+    public bool LAWK = true;
 
     /// <summary>
     ///   Path to a scene that is used to modify / upgrade the organelle. If not set the organelle is not modifiable
@@ -211,6 +219,11 @@ public class OrganelleDefinition : IRegistryType
     public int HexCount => Hexes.Count;
 
     public string InternalName { get; set; } = null!;
+
+    // Faster checks for specific components
+    public bool HasPilusComponent { get; private set; }
+    public bool HasMovementComponent { get; private set; }
+    public bool HasCiliaComponent { get; private set; }
 
     [JsonIgnore]
     public string UntranslatedName =>
@@ -271,14 +284,15 @@ public class OrganelleDefinition : IRegistryType
     }
 
     /// <summary>
-    ///   Returns true when this has the specified component
-    ///   factory. For example MovementComponentFactory.
+    ///   Returns true when this has the specified component factory.
+    ///   For example <see cref="MovementComponentFactory"/>.
     /// </summary>
     /// <remarks>
     ///   <para>
-    ///     The PlacedOrganelle.HasComponent method checks for the
-    ///     actual component class this checks for the *factory*
-    ///     class.
+    ///     The <see cref="PlacedOrganelle.HasComponent{T}"/> method checks for the actual component class this checks
+    ///     for the *factory* class. For performance reasons a few components are available as direct boolean
+    ///     properties, if a component you want to check for has such a boolean defined for it, use those instead of
+    ///     this general interface.
     ///   </para>
     /// </remarks>
     public bool HasComponentFactory<T>()
@@ -320,6 +334,12 @@ public class OrganelleDefinition : IRegistryType
         if (Mass <= 0.0f)
         {
             throw new InvalidRegistryDataException(name, GetType().Name, "Mass is unset");
+        }
+
+        if (ProkaryoteChance != 0 && RequiresNucleus)
+        {
+            throw new InvalidRegistryDataException(name, GetType().Name,
+                "Prokaryote chance is non-zero but player requires a nucleus to place this");
         }
 
         if (InitialComposition == null || InitialComposition.Count < 1)
@@ -410,6 +430,8 @@ public class OrganelleDefinition : IRegistryType
         {
             GetRotatedHexes(i);
         }
+
+        ComputeFactoryCache();
     }
 
     public void ApplyTranslations()
@@ -422,6 +444,13 @@ public class OrganelleDefinition : IRegistryType
         return Name + " Organelle";
     }
 
+    private void ComputeFactoryCache()
+    {
+        HasPilusComponent = HasComponentFactory<PilusComponentFactory>();
+        HasMovementComponent = HasComponentFactory<MovementComponentFactory>();
+        HasCiliaComponent = HasComponentFactory<CiliaComponentFactory>();
+    }
+
     public class OrganelleComponentFactoryInfo
     {
         public NucleusComponentFactory? Nucleus;
@@ -432,6 +461,8 @@ public class OrganelleDefinition : IRegistryType
         public PilusComponentFactory? Pilus;
         public ChemoreceptorComponentFactory? Chemoreceptor;
         public SignalingAgentComponentFactory? SignalingAgent;
+        public CiliaComponentFactory? Cilia;
+        public LysosomeComponentFactory? Lysosome;
 
         private readonly List<IOrganelleComponentFactory> allFactories = new();
 
@@ -505,6 +536,20 @@ public class OrganelleDefinition : IRegistryType
             {
                 SignalingAgent.Check(name);
                 allFactories.Add(SignalingAgent);
+                ++count;
+            }
+
+            if (Cilia != null)
+            {
+                Cilia.Check(name);
+                allFactories.Add(Cilia);
+                ++count;
+            }
+
+            if (Lysosome != null)
+            {
+                Lysosome.Check(name);
+                allFactories.Add(Lysosome);
                 ++count;
             }
         }

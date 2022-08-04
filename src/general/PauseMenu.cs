@@ -41,11 +41,17 @@ public class PauseMenu : CustomDialog
     private CustomConfirmationDialog unsavedProgressWarning = null!;
     private AnimationPlayer animationPlayer = null!;
 
+    private bool paused;
+
     /// <summary>
     ///   The assigned pending exit type, will be used to specify what kind of
     ///   game exit will be performed on exit confirmation.
     /// </summary>
     private ExitType exitType;
+
+    private bool exiting;
+
+    private int exitTries;
 
     [Signal]
     public delegate void OnResumed();
@@ -159,12 +165,34 @@ public class PauseMenu : CustomDialog
         }
     }
 
+    private bool Paused
+    {
+        set
+        {
+            if (paused == value)
+                return;
+
+            if (paused)
+            {
+                PauseManager.Instance.Resume(nameof(PauseMenu));
+            }
+            else
+            {
+                PauseManager.Instance.AddPause(nameof(PauseMenu));
+            }
+
+            paused = value;
+        }
+    }
+
     public override void _EnterTree()
     {
         // This needs to be done early here to make sure the help screen loads the right text
         helpScreen = GetNode<HelpScreen>(HelpScreenPath);
         helpScreen.Category = HelpCategory;
         InputManager.RegisterReceiver(this);
+
+        GetTree().SetAutoAcceptQuit(false);
 
         base._EnterTree();
     }
@@ -174,6 +202,9 @@ public class PauseMenu : CustomDialog
         base._ExitTree();
 
         InputManager.UnregisterReceiver(this);
+        Paused = false;
+
+        GetTree().SetAutoAcceptQuit(true);
     }
 
     public override void _Ready()
@@ -184,6 +215,21 @@ public class PauseMenu : CustomDialog
         saveMenu = GetNode<NewSaveMenu>(SaveMenuPath);
         unsavedProgressWarning = GetNode<CustomConfirmationDialog>(UnsavedProgressWarningPath);
         animationPlayer = GetNode<AnimationPlayer>("AnimationPlayer");
+
+        unsavedProgressWarning.Connect(nameof(Closed), this, nameof(CancelExit));
+        unsavedProgressWarning.Connect(nameof(CustomConfirmationDialog.Cancelled), this, nameof(CancelExit));
+    }
+
+    public override void _Notification(int notification)
+    {
+        base._Notification(notification);
+
+        if (notification == NotificationWmQuitRequest)
+        {
+            // For some reason we need to perform this later, otherwise Godot complains about a node being busy
+            // setting up children
+            Invoke.Instance.Perform(ExitPressed);
+        }
     }
 
     [RunOnKeyDown("ui_cancel", Priority = Constants.PAUSE_MENU_CANCEL_PRIORITY)]
@@ -236,7 +282,8 @@ public class PauseMenu : CustomDialog
             return;
 
         animationPlayer.Play("Open");
-        GetTree().Paused = true;
+        Paused = true;
+        exiting = false;
     }
 
     public void Close()
@@ -245,7 +292,7 @@ public class PauseMenu : CustomDialog
             return;
 
         animationPlayer.Play("Close");
-        GetTree().Paused = false;
+        Paused = false;
     }
 
     public void OpenToHelp()
@@ -312,7 +359,10 @@ public class PauseMenu : CustomDialog
     {
         exitType = ExitType.QuitGame;
 
-        if (SaveHelper.SavedRecently || !Settings.Instance.ShowUnsavedProgressWarning)
+        ++exitTries;
+
+        if (SaveHelper.SavedRecently || !Settings.Instance.ShowUnsavedProgressWarning
+            || exitTries >= Constants.FORCE_CLOSE_AFTER_TRIES)
         {
             ConfirmExit();
         }
@@ -334,6 +384,11 @@ public class PauseMenu : CustomDialog
 
     private void ConfirmExit()
     {
+        if (exiting)
+            return;
+
+        exiting = true;
+
         switch (exitType)
         {
             case ExitType.ReturnToMenu:
@@ -345,13 +400,16 @@ public class PauseMenu : CustomDialog
         }
     }
 
+    private void CancelExit()
+    {
+        exitTries = 0;
+    }
+
     private void ReturnToMenu()
     {
-        // Unpause the game
-        GetTree().Paused = false;
+        Paused = false;
 
-        TransitionManager.Instance.AddScreenFade(ScreenFade.FadeType.FadeOut, 0.1f, false);
-        TransitionManager.Instance.StartTransitions(this, nameof(OnSwitchToMenu));
+        TransitionManager.Instance.AddSequence(ScreenFade.FadeType.FadeOut, 0.1f, OnSwitchToMenu, false);
     }
 
     private void Quit()
@@ -414,6 +472,7 @@ public class PauseMenu : CustomDialog
         Hide();
         EmitSignal(nameof(OnResumed));
         EmitSignal(nameof(MakeSave), name);
+        Paused = false;
     }
 
     /// <summary>
@@ -427,5 +486,11 @@ public class PauseMenu : CustomDialog
     private void OnLoadSaveConfirmed(SaveListItem item)
     {
         item.LoadThisSave();
+    }
+
+    private void OnSaveLoaded(string saveName)
+    {
+        _ = saveName;
+        Paused = false;
     }
 }

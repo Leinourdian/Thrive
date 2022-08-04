@@ -6,7 +6,8 @@ using AutoEvo;
 /// </summary>
 public class EditorAutoEvoRun : AutoEvoRun
 {
-    public EditorAutoEvoRun(GameWorld world, Species originalEditedSpecies, Species modifiedProperties) : base(world)
+    public EditorAutoEvoRun(GameWorld world, Species originalEditedSpecies, Species modifiedProperties,
+        AutoEvoConfiguration? configuration = null) : base(world, configuration)
     {
         OriginalEditedSpecies = originalEditedSpecies;
         ModifiedProperties = modifiedProperties;
@@ -19,14 +20,13 @@ public class EditorAutoEvoRun : AutoEvoRun
     {
         // Custom run setup for editor's use
         var map = Parameters.World.Map;
+        var worldSettings = Parameters.World.WorldSettings;
 
-        ModifiedProperties.Mutated = true;
-
-        steps.Enqueue(new CalculatePopulation(SimulationParameters.Instance.AutoEvoConfiguration, map,
+        steps.Enqueue(new CalculatePopulation(configuration, worldSettings, map,
             new List<Species> { ModifiedProperties },
             new List<Species> { OriginalEditedSpecies }, true) { CanRunConcurrently = false });
 
-        //if (ModifiedProperties.Population <= 0)
+        //if (ModifiedProperties.Population <= 0) // probs useless
         //{
         //    ModifiedProperties.Population = 2;
         //}

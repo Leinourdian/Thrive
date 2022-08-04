@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Godot;
 using Array = Godot.Collections.Array;
@@ -416,19 +415,17 @@ public class LineChart : VBoxContainer
 
                 var xValueForm = string.IsNullOrEmpty(TooltipXAxisFormat) ?
                     $"{point.X.FormatNumber()} {XAxisName}" :
-                    string.Format(CultureInfo.CurrentCulture,
-                        TooltipXAxisFormat!, point.X);
+                    TooltipXAxisFormat!.FormatSafe(point.X);
 
                 var yValueForm = string.IsNullOrEmpty(TooltipYAxisFormat) ?
                     $"{point.Y.FormatNumber()} {YAxisName}" :
-                    string.Format(CultureInfo.CurrentCulture,
-                        TooltipYAxisFormat!, point.Y);
+                    TooltipYAxisFormat!.FormatSafe(point.Y);
 
                 toolTip.DisplayName = data.Key + point;
                 toolTip.Description = $"{data.Key}\n{xValueForm}\n{yValueForm}";
 
                 toolTip.DisplayDelay = 0;
-                toolTip.HideOnMousePress = false;
+                toolTip.HideOnMouseAction = false;
                 toolTip.TransitionType = ToolTipTransitioning.Immediate;
                 toolTip.Positioning = ToolTipPositioning.ControlBottomRightCorner;
 
@@ -1000,9 +997,7 @@ public class LineChart : VBoxContainer
         childChart.inspectButton.Hide();
     }
 
-    /*
-        GUI Callbacks
-    */
+    // GUI Callbacks
 
     private void OnInspectButtonPressed()
     {
@@ -1016,9 +1011,7 @@ public class LineChart : VBoxContainer
         chartPopup.Hide();
     }
 
-    /*
-        Subclasses
-    */
+    // Subclasses
 
     public class DatasetsIconLegend : Reference, IDataSetsLegend
     {
@@ -1115,15 +1108,15 @@ public class LineChart : VBoxContainer
             {
                 case DataSetVisibilityUpdateResult.MaxVisibleLimitReached:
                     icon.Pressed = false;
-                    ToolTipManager.Instance.ShowPopup(string.Format(
-                        CultureInfo.CurrentCulture, TranslationServer.Translate(
-                            "MAX_VISIBLE_DATASET_WARNING"), chart.MaxDisplayedDataSet), 1f);
+                    ToolTipManager.Instance.ShowPopup(
+                        TranslationServer.Translate("MAX_VISIBLE_DATASET_WARNING")
+                            .FormatSafe(chart.MaxDisplayedDataSet), 1.0f);
                     break;
                 case DataSetVisibilityUpdateResult.MinVisibleLimitReached:
                     icon.Pressed = true;
-                    ToolTipManager.Instance.ShowPopup(string.Format(
-                        CultureInfo.CurrentCulture, TranslationServer.Translate(
-                            "MIN_VISIBLE_DATASET_WARNING"), chart.MinDisplayedDataSet), 1f);
+                    ToolTipManager.Instance.ShowPopup(
+                        TranslationServer.Translate("MIN_VISIBLE_DATASET_WARNING")
+                            .FormatSafe(chart.MinDisplayedDataSet), 1.0f);
                     break;
             }
         }
@@ -1207,14 +1200,14 @@ public class LineChart : VBoxContainer
             switch (result)
             {
                 case DataSetVisibilityUpdateResult.MaxVisibleLimitReached:
-                    ToolTipManager.Instance.ShowPopup(string.Format(
-                        CultureInfo.CurrentCulture, TranslationServer.Translate(
-                            "MAX_VISIBLE_DATASET_WARNING"), chart.MaxDisplayedDataSet), 1f);
+                    ToolTipManager.Instance.ShowPopup(
+                        TranslationServer.Translate("MAX_VISIBLE_DATASET_WARNING")
+                            .FormatSafe(chart.MaxDisplayedDataSet), 1.0f);
                     break;
                 case DataSetVisibilityUpdateResult.MinVisibleLimitReached:
-                    ToolTipManager.Instance.ShowPopup(string.Format(
-                        CultureInfo.CurrentCulture, TranslationServer.Translate(
-                            "MIN_VISIBLE_DATASET_WARNING"), chart.MinDisplayedDataSet), 1f);
+                    ToolTipManager.Instance.ShowPopup(
+                        TranslationServer.Translate("MIN_VISIBLE_DATASET_WARNING")
+                            .FormatSafe(chart.MinDisplayedDataSet), 1.0f);
                     break;
             }
         }
