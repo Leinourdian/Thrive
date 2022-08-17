@@ -381,6 +381,7 @@ public class AutoEvoRun
 
         foreach (var entry in map.Patches)
         {
+            continue;
             // TODO: No one should be allowed to update the SpeciesInPatch.
             // If this happens, the root cause must be addressed.
 
@@ -410,10 +411,10 @@ public class AutoEvoRun
                         autoEvoConfiguration.SpeciesSplitByMutationThresholdPopulationFraction,
                         autoEvoConfiguration.SpeciesSplitByMutationThresholdPopulationAmount));
 
-                    steps.Enqueue(new FindBestMigration(autoEvoConfiguration, worldSettings, map, speciesEntry.Key,
-                        random,
-                        autoEvoConfiguration.MoveAttemptsPerSpecies,
-                        autoEvoConfiguration.AllowSpeciesToNotMigrate));
+                    //steps.Enqueue(new FindBestMigration(autoEvoConfiguration, worldSettings, map, speciesEntry.Key,
+                    //    random,
+                    //    autoEvoConfiguration.MoveAttemptsPerSpecies,
+                    //    autoEvoConfiguration.AllowSpeciesToNotMigrate));
                 }
             }
 
@@ -436,13 +437,22 @@ public class AutoEvoRun
                 }
             }
 
-            if (entry.Value.SpeciesInPatch.Count < autoEvoConfiguration.LowBiodiversityLimit &&
-                random.NextDouble() < autoEvoConfiguration.BiodiversityAttemptFillChance)
-            {
-                steps.Enqueue(new IncreaseBiodiversity(autoEvoConfiguration, worldSettings,
-                    map, entry.Value, random));
-            }
+            //if (entry.Value.SpeciesInPatch.Count < autoEvoConfiguration.LowBiodiversityLimit &&
+            //    random.NextDouble() < autoEvoConfiguration.BiodiversityAttemptFillChance)
+            //{
+            //    steps.Enqueue(new IncreaseBiodiversity(autoEvoConfiguration, worldSettings,
+            //        map, entry.Value, random));
+            //}
         }
+
+        // For some reason nothing no new species come
+
+        steps.Enqueue(new FindBestMutation(autoEvoConfiguration,
+                        worldSettings, map, Parameters.World.PlayerSpecies, //speciesEntry.Key,
+                        autoEvoConfiguration.MutationsPerSpecies,
+                        autoEvoConfiguration.AllowSpeciesToNotMutate,
+                        autoEvoConfiguration.SpeciesSplitByMutationThresholdPopulationFraction,
+                        autoEvoConfiguration.SpeciesSplitByMutationThresholdPopulationAmount));
 
         // The new populations don't depend on the mutations, this is so that when
         // the player edits their species the other species they are competing
@@ -454,7 +464,7 @@ public class AutoEvoRun
         // Due to species splitting migrations may end up being invalid
         // TODO: should this also adjust / remove migrations that are no longer possible due to updated population
         // numbers
-        steps.Enqueue(new RemoveInvalidMigrations(alreadyHandledSpecies));
+        //steps.Enqueue(new RemoveInvalidMigrations(alreadyHandledSpecies));
 
         AddPlayerSpeciesPopulationChangeClampStep(steps, map, Parameters.World.PlayerSpecies);
 
@@ -502,7 +512,7 @@ public class AutoEvoRun
 
                     var change = resultPopulation.Value - previousPopulation;
 
-                    change = (long)Math.Round(change * Constants.AUTO_EVO_PLAYER_STRENGTH_FRACTION);
+                    change = (long)Math.Round(change * Constants.AUTO_EVO_PLAYER_STRENGTH_FRACTION); //TODO: remove this
 
                     result.AddPopulationResultForSpecies(playerSpecies, entry.Value, previousPopulation + change);
                 }

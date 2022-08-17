@@ -32,6 +32,8 @@
 
         public bool RunStep(RunResults results)
         {
+            //return true;
+
             // ReSharper disable RedundantArgumentDefaultValue
             var config = new SimulationConfiguration(configuration, map, worldSettings, 1)
             {

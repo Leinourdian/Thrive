@@ -19,6 +19,8 @@
 
         public static void Simulate(SimulationConfiguration parameters, SimulationCache? existingCache)
         {
+            //Console.WriteLine("1");
+
             if (existingCache?.MatchesSettings(parameters.WorldSettings) == false)
                 throw new ArgumentException("Given cache doesn't match world settings");
 
@@ -32,11 +34,13 @@
 
             IEnumerable<KeyValuePair<int, Patch>> patchesToSimulate = parameters.OriginalMap.Patches;
 
-            // Skip patches not configured to be simulated in order to run faster
-            if (parameters.PatchesToRun.Count > 0)
-            {
-                patchesToSimulate = patchesToSimulate.Where(p => parameters.PatchesToRun.Contains(p.Value));
-            }
+            patchesToSimulate = patchesToSimulate.Where(p => p.Value.SpeciesInPatch.Count > 0);
+
+            //// Skip patches not configured to be simulated in order to run faster
+            //if (parameters.PatchesToRun.Count > 0)
+            //{
+            //    patchesToSimulate = patchesToSimulate.Where(p => parameters.PatchesToRun.Contains(p.Value));
+            //}
 
             var patchesList = patchesToSimulate.ToList();
 
@@ -142,8 +146,12 @@
             IEnumerable<KeyValuePair<int, Patch>> patchesToSimulate, Random random, SimulationCache cache,
             AutoEvoConfiguration autoEvoConfiguration)
         {
+            //Console.WriteLine("2");
             foreach (var entry in patchesToSimulate)
             {
+                // Collect all species in this patch and its adjacent patches (patch.Adjacent), then create mutated species based on them
+                // Ignore population in future checks
+
                 // Simulate the species in each patch taking into account the already computed populations
                 SimulatePatchStep(parameters, entry.Value,
                     species.Where(item => parameters.Results.GetPopulationInPatch(item, entry.Value) > 0),
@@ -158,6 +166,7 @@
             IEnumerable<Species> genericSpecies, Random random, SimulationCache cache,
             AutoEvoConfiguration autoEvoConfiguration)
         {
+            //Console.WriteLine("3");
             _ = random;
 
             var populations = simulationConfiguration.Results;
@@ -288,6 +297,7 @@
                 if (newPopulation < Constants.AUTO_EVO_MINIMUM_VIABLE_POPULATION)
                     newPopulation = 0;
 
+                //Console.WriteLine("4");
                 populations.AddPopulationResultForSpecies(currentSpecies, patch, newPopulation);
             }
         }

@@ -39,6 +39,8 @@
 
         public bool RunStep(RunResults results)
         {
+            return true;
+
             if (tryCurrentPatch)
             {
                 CheckCurrentPatchSpecies(results);

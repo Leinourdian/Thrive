@@ -62,19 +62,71 @@
         protected override IAttemptResult TryVariant()
         {
             var mutated = (MicrobeSpecies)species.Clone();
-            mutations.CreateMutatedSpecies((MicrobeSpecies)species, mutated,
-                worldSettings.AIMutationMultiplier, worldSettings.LAWK);
+            //mutations.CreateMutatedSpecies((MicrobeSpecies)species, mutated,
+            //    worldSettings.AIMutationMultiplier, worldSettings.LAWK);
 
             var config = new SimulationConfiguration(configuration, map, worldSettings,
                 Constants.AUTO_EVO_VARIANT_SIMULATION_STEPS);
 
+            CreateMutationsForAllPatches();
+
             config.SetPatchesToRunBySpeciesPresence(species);
-            config.ExcludedSpecies.Add(species);
-            config.ExtraSpecies.Add(mutated);
+            //config.ExcludedSpecies.Add(species);
+            //config.ExtraSpecies.Add(mutated); //TODO: add all the mutations with this
 
             PopulationSimulation.Simulate(config, cache);
 
-            return new AttemptResult(mutated, config.Results.GetPopulationInPatches(mutated));
+            //return new AttemptResult(mutated, config.Results.GetPopulationInPatches(mutated));
+            return new AttemptResult(species, config.Results.GetPopulationInPatches(species));
+        }
+
+        private void CreateMutationsForAllPatches()
+        {
+            var patchDict = new Dictionary<Patch, List<Species>>();
+
+            foreach (var patch in map.Patches.Values)
+            {
+                var speciesList = SpeciesToSimulateForPatch(patch);
+
+                patchDict.Add(patch, speciesList);
+            }
+
+            foreach (var entry in patchDict)
+            {
+                foreach (var species in entry.Value)
+                {
+                    entry.Key.AddSpecies(species, 1);
+                }
+            }
+        }
+
+        private List<Species> SpeciesToSimulateForPatch(Patch originPatch)
+        {
+            var speciesList = new List<Species>();
+            var patches = originPatch.Adjacent;
+            patches.Add(originPatch);
+
+            foreach (var patch in patches)
+            {
+                foreach (var species in patch.SpeciesInPatch.Select(s => s.Key))
+                {
+                    for (int i = 0; i < (patch == originPatch ? 3 : 1); ++i)
+                    {
+                        var mutated = (MicrobeSpecies)species.Clone();
+                        mutations.CreateMutatedSpecies((MicrobeSpecies)species, mutated,
+                            worldSettings.AIMutationMultiplier, worldSettings.LAWK);
+
+                        speciesList.Add(mutated);
+                    }
+
+                    if (patch != originPatch)
+                    {
+                        speciesList.Add(species);
+                    }
+                }
+            }
+
+            return speciesList;
         }
 
         /// <summary>
