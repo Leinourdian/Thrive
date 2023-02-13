@@ -1166,6 +1166,7 @@ public partial class Microbe
             {
                 //// Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
                 //ResetOrganelleLayout();
+                allOrganellesDivided = false;
                 SetupRequiredBaseReproductionCompounds();
 
                 Divide();
