@@ -801,6 +801,52 @@ public partial class Microbe
         bool reproductionStageComplete =
             ProcessBaseReproductionCost(ref remainingAllowedCompoundUse, ref remainingFreeCompounds);
 
+        //-----------------------------------------
+        var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
+
+        if (!reproductionStageComplete)
+        {
+            float jee = 0.0f;
+            foreach (float a in requiredCompoundsForBaseReproduction.Values)
+            {
+                jee += a;
+            }
+
+            float jee2 = 0.0f;
+            foreach (float a in Species.BaseReproductionCost.Values)
+            {
+                jee2 += a;
+            }
+
+            if (jee2 == 0.0f)
+            {
+                Console.WriteLine("EREREREREREREREREr");
+            }
+
+            float jee3 = jee2 - jee;
+
+            var jeejee = (1.0f + 0.7f * jee3 / jee2) * baseScale;
+            ApplyScale(jeejee);
+
+            //1.41f is about sqrt(2) -> adult diameter = 2 * child diameter...???
+            //trying 0.7f which is about sqrt(2) * 0.5
+            //or maybe 1.0f for simplicity with the previous part... test
+            //if (OrganelleParent.Scale >= 1.4f * baseScale) //new Vector3(0.7f, 0.7f, 0.7f))
+            //{
+            //    reproductionStageComplete = true;
+            //}
+        }
+        else if (reproductionStageComplete)
+        {
+            // All organelles and base reproduction cost is now fulfilled, we are fully ready to reproduce
+            allOrganellesDivided = true;
+
+            // For NPC cells this immediately splits them and the allOrganellesDivided flag is reset
+            ReadyToReproduce();
+        }
+
+        return;
+
         // For this stage and all others below, reproductionStageComplete tracks whether the previous reproduction
         // stage completed, i.e. whether we should proceed with the next stage
         if (reproductionStageComplete)
@@ -1118,8 +1164,9 @@ public partial class Microbe
 
             if (!IsMulticellular)
             {
-                // Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
-                ResetOrganelleLayout();
+                //// Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
+                //ResetOrganelleLayout();
+                SetupRequiredBaseReproductionCompounds();
 
                 Divide();
             }
