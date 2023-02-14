@@ -1083,8 +1083,6 @@ public partial class Microbe
 
     private void OnPlayerDuplicationCheat(object sender, EventArgs e)
     {
-        allOrganellesDivided = true;
-
         Divide();
     }
 
