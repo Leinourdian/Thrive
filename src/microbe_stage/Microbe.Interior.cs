@@ -553,6 +553,8 @@ public partial class Microbe
     /// </summary>
     public Dictionary<Compound, float> CalculateTotalCompounds()
     {
+        return totalCostPerCompound;
+
         if (organelles == null)
             throw new InvalidOperationException("Microbe must be initialized first");
 
@@ -575,6 +577,14 @@ public partial class Microbe
             throw new InvalidOperationException("Microbe must be initialized first");
 
         var result = new Dictionary<Compound, float>();
+
+        foreach (var entry in requiredCompoundsForBaseReproduction)
+        {
+            var juttu = totalCostPerCompound[entry.Key] - entry.Value;
+            result.Add(entry.Key, juttu);
+        }
+
+        return result;
 
         foreach (var organelle in organelles)
         {
