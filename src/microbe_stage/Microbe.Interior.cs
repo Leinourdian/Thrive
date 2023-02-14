@@ -16,6 +16,8 @@ public partial class Microbe
 
     [JsonProperty]
     private readonly Dictionary<Compound, float> requiredCompoundsForBaseReproduction = new();
+    [JsonProperty]
+    private readonly Dictionary<Compound, float> totalCostPerCompound = new(); //should this be jsonproperty?
 
     private Compound atp = null!;
     private Compound glucose = null!;
@@ -802,20 +804,20 @@ public partial class Microbe
             ProcessBaseReproductionCost(ref remainingAllowedCompoundUse, ref remainingFreeCompounds);
 
         //-----------------------------------------
-        var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
+        var hmm = HexCount;
 
         if (!reproductionStageComplete)
         {
             float jee = 0.0f;
-            foreach (float a in requiredCompoundsForBaseReproduction.Values)
+            foreach (float amount in requiredCompoundsForBaseReproduction.Values)
             {
-                jee += a;
+                jee += amount;
             }
 
             float jee2 = 0.0f;
-            foreach (float a in Species.BaseReproductionCost.Values)
+            foreach (float amount in totalCostPerCompound.Values)
             {
-                jee2 += a;
+                jee2 += amount;
             }
 
             if (jee2 == 0.0f)
@@ -824,7 +826,7 @@ public partial class Microbe
             }
 
             float jee3 = jee2 - jee;
-
+            var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
             var jeejee = (1.0f + 0.7f * jee3 / jee2) * baseScale;
             ApplyScale(jeejee);
 
@@ -1067,6 +1069,15 @@ public partial class Microbe
     {
         requiredCompoundsForBaseReproduction.Clear();
         requiredCompoundsForBaseReproduction.Merge(Species.BaseReproductionCost);
+        var sizeCostPerCompound = new Dictionary<Compound, float>();
+        foreach (var compound in requiredCompoundsForBaseReproduction.Keys)
+        {
+            sizeCostPerCompound.Add(compound, HexCount);
+        }
+
+        requiredCompoundsForBaseReproduction.Merge(sizeCostPerCompound);
+        totalCostPerCompound.Clear();
+        totalCostPerCompound.Merge(requiredCompoundsForBaseReproduction);
         totalNeededForMulticellularGrowth = null;
     }
 
