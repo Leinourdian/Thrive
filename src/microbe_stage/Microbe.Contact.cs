@@ -229,9 +229,9 @@ public partial class Microbe
             var size = HexCount * (1 - DigestedAmount);
 
             if (CellTypeProperties.IsBacteria)
-                return size * 0.5f;
+                size *= 0.5f;
 
-            return size;
+            return size * Growth;
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Godot;
 using Newtonsoft.Json;
@@ -62,6 +63,8 @@ public partial class Microbe
     private float queuedSlimeSecretionTime;
 
     private float lastCheckedReproduction;
+
+    private float lastScaledPhysics;
 
     /// <summary>
     ///   Flips every reproduction update. Used to make compound use for reproduction distribute more evenly between
@@ -184,7 +187,7 @@ public partial class Microbe
     ///   Called periodically to report the chemoreception settings of the microbe
     /// </summary>
     [JsonProperty]
-    public Action<Microbe, IEnumerable<(Compound Compound, float Range, float MinAmount, Color Colour)>>?
+    public Action<Microbe, IEnumerable<(Compound Compound, float Range, float MinAmount, Godot.Color Colour)>>?
         OnCompoundChemoreceptionInfo { get; set; }
 
     /// <summary>
@@ -666,7 +669,7 @@ public partial class Microbe
             return;
 
         // max here buffs compound absorbing for the smallest cells
-        var grabRadius = Mathf.Max(Radius, 3.0f);
+        var grabRadius = Mathf.Max(Radius * Mathf.Sqrt(Growth), 3.0f);
 
         cloudSystem!.AbsorbCompounds(GlobalTransform.origin, grabRadius, Compounds,
             TotalAbsorbedCompounds, delta, Membrane.Type.ResourceAbsorptionFactor);
@@ -778,6 +781,7 @@ public partial class Microbe
         }
 
         lastCheckedReproduction += delta;
+        lastScaledPhysics += delta;
 
         // Limit how often the reproduction logic is ran
         if (lastCheckedReproduction < Constants.MICROBE_REPRODUCTION_PROGRESS_INTERVAL)
@@ -814,7 +818,6 @@ public partial class Microbe
             ProcessBaseReproductionCost(ref remainingAllowedCompoundUse, ref remainingFreeCompounds);
 
         //-----------------------------------------
-        var hmm = HexCount;
 
         if (!reproductionStageComplete)
         {
@@ -835,10 +838,26 @@ public partial class Microbe
                 Console.WriteLine("EREREREREREREREREr");
             }
 
-            float jee3 = jee2 - jee;
+            float jee3 = (jee2 - jee) * 5;
             var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
-            var jeejee = (1.0f + 0.7f * jee3 / jee2) * baseScale;
+            Growth = 1.0f + jee3/jee2;
+            var jeejee = Mathf.Sqrt(Growth) * baseScale;
             ApplyScale(jeejee);
+
+            //if (lastScaledPhysics > 10.0f)
+            //{
+            //    lastScaledPhysics = 0.0f;
+
+            //    var tim1 = Time.GetTicksUsec();
+
+            //    foreach (var org in organelles!)
+            //    {
+            //        org.MakeCollisionShapes(this);
+            //    }
+
+            //    var tim2 = Time.GetTicksUsec();
+            //    GD.Print(tim2 - tim1);
+            //}
 
             //1.41f is about sqrt(2) -> adult diameter = 2 * child diameter...???
             //trying 0.7f which is about sqrt(2) * 0.5

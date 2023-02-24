@@ -166,6 +166,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         }
     }
 
+    public float Growth { get; set; }
+
     [JsonIgnore]
     public float RotationSpeed => cachedRotationSpeed ??=
         MicrobeInternalCalculations.CalculateRotationSpeed(organelles ??
@@ -233,6 +235,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
     [JsonIgnore]
     public GeometryInstance EntityGraphics => Membrane;
+
+    //public CollisionObject2D Shape { get; set; } = null!;
 
     [JsonIgnore]
     public int RenderPriority
@@ -1020,6 +1024,13 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         SetScaleFromSpecies();
 
+        //float size = HexCount;
+        //if (CellTypeProperties.IsBacteria)
+        //    size *= 0.5f;
+        //EngulfSize = size;
+
+        Growth = 1.0f;
+
         ResetOrganelleLayout();
 
         SetMembraneFromSpecies();
@@ -1050,6 +1061,17 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         // Scale only the graphics parts to not have physics affected
         Membrane.Scale = scale;
         OrganelleParent.Scale = scale;
+
+        //var scale2D = new Vector2(scale.x, scale.y);
+        //Shape.Scale = scale2D;
+
+        //if (organelles != null)
+        //{
+        //    foreach (var org in organelles)
+        //    {
+        //        org.MakeCollisionShapes(this);
+        //    }
+        //}
     }
 
     private void ApplyRenderPriority()

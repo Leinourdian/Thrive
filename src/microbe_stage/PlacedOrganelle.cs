@@ -620,11 +620,13 @@ public class PlacedOrganelle : Spatial, IPositionedOrganelle, ISaveLoadedTracked
     ///     when loading a game is not necessary
     ///   </para>
     /// </remarks>
-    private void MakeCollisionShapes(Microbe to)
+    public void MakeCollisionShapes(Microbe to)
     {
         currentShapesParent = to;
 
-        float hexSize = Constants.DEFAULT_HEX_SIZE;
+        float growthStage = Mathf.Sqrt(to.Growth); // shrink a bit? sqrt is too much shrinking
+
+        float hexSize = Constants.DEFAULT_HEX_SIZE * growthStage;
 
         // Scale the physics hex size down for bacteria
         if (ParentMicrobe!.CellTypeProperties.IsBacteria)
@@ -638,7 +640,7 @@ public class PlacedOrganelle : Spatial, IPositionedOrganelle, ISaveLoadedTracked
 
             // The shape is in our parent so the final position is our
             // offset plus the hex offset
-            Vector3 shapePosition = ShapeTruePosition(hex);
+            Vector3 shapePosition = ShapeTruePosition(hex) * growthStage;
 
             // Scale for bacteria physics.
             if (ParentMicrobe.CellTypeProperties.IsBacteria)
