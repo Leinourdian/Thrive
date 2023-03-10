@@ -1047,15 +1047,39 @@ public partial class Microbe
         var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);
         ShapeOwnerSetTransform(ownerId, newTransform);
 
+        //if (piliShapesAreReset)
+        //{
+        //    previousGrowth = 1.0f;
+        //}
+
+        //foreach (var id in pilusPhysicsShapes)
+        //{
+        //    var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
+        //    var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
+        //    var newPilusScale = startingScale * Mathf.Sqrt(growth);
+        //    var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
+        //    //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
+        //    ShapeOwnerSetTransform(id, newPilusTransform);
+        //}
+    }
+
+    private void ScalePilusShapes()
+    {
+        //old pilusGrowth is 1 at start or when loaded from save, used instead of previousGrowth
+        //if (pilusPhysicsShapes.Count < 1)
+        //    return;
+
         foreach (var id in pilusPhysicsShapes)
         {
             var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
-            var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
+            var startingScale = oldScale / Mathf.Sqrt(pilusGrowth);
             var newPilusScale = startingScale * Mathf.Sqrt(growth);
             var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
             //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
             ShapeOwnerSetTransform(id, newPilusTransform);
         }
+
+        pilusGrowth = growth;
     }
 
     private void CheckEngulfShape()

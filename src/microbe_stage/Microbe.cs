@@ -28,6 +28,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
     [JsonProperty]
     private float growth;
 
+    private float pilusGrowth;
+
     //[JsonIgnore] // I think this is useless
     //private readonly List<uint> shapes = new();
 
@@ -456,6 +458,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
             SetMembraneFromSpecies();
 
             SetShapeFromSpecies();
+
+            pilusGrowth = 1.0f;
             ScaleShapes(growth);
 
             // Re-attach engulfed objects
@@ -776,6 +780,11 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
             QueuedSignalingCommand = null;
         }
 
+        if (pilusGrowth != growth)
+        {
+            ScalePilusShapes();
+        }
+
         // Rotation is applied in the physics force callback as that's the place where the body rotation
         // can be directly set without problems
 
@@ -1046,7 +1055,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         //    size *= 0.5f;
         //EngulfSize = size;
 
-        growth = 1.0f; // TODO: this probs doesn't work with saves
+        growth = 1.0f;
+        pilusGrowth = 1.0f;
 
         ResetOrganelleLayout();
 
