@@ -855,7 +855,7 @@ public partial class Microbe
                 var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
                 var newPilusScale = startingScale * Mathf.Sqrt(Growth);
                 var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
-                GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
+                //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
                 ShapeOwnerSetTransform(id, newPilusTransform);
             }
 

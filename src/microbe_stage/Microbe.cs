@@ -1058,7 +1058,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         SetupMicrobeHitpoints();
 
         //var tim1 = Time.GetTicksUsec();
-        SendOrganellePositionsToMembrane();
+        SendOrganellePositionsToMembrane(); //TODO: this causes organelles to display awkwardly but also is needed for accurate shape
+        membraneOrganellePositionsAreDirty = true;
         //var tim2 = Time.GetTicksUsec();
         // set up collision shape
         //var jee = GD.Load<ConvexPolygonShape>("res://assets/models/Iron3.shape");
