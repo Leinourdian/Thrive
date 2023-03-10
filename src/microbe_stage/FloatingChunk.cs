@@ -310,12 +310,12 @@ public class FloatingChunk : RigidBody, ISpawned, IEngulfable
         VentCompounds(elapsedSinceProcess, compoundClouds);
 
 
-        collisionShape!.Scale *= 0.998f;
-        var tim1 = Time.GetTicksUsec();
-        Scale *= 0.998f;
+        //collisionShape!.Scale *= 0.998f;
+        //var tim1 = Time.GetTicksUsec();
+        //Scale *= 0.998f;
 
-        var tim2 = Time.GetTicksUsec();
-        GD.Print(tim2 - tim1);
+        //var tim2 = Time.GetTicksUsec();
+        //GD.Print(tim2 - tim1);
 
 
         if (UsesDespawnTimer)

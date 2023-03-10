@@ -575,7 +575,10 @@ public class PlacedOrganelle : Spatial, IPositionedOrganelle, ISaveLoadedTracked
         //     !IsLoadedFromSave)
         //     ParentMicrobe.Colony.Master.Mass += Definition.Mass;
 
-        MakeCollisionShapes(ParentMicrobe!.Colony?.Master ?? ParentMicrobe);
+        if (false)
+        {
+            MakeCollisionShapes(ParentMicrobe!.Colony?.Master ?? ParentMicrobe);
+        }
 
         if (Definition.Enzymes != null)
         {

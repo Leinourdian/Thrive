@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Newtonsoft.Json;
 using Array = Godot.Collections.Array;
@@ -284,6 +285,104 @@ public class Membrane : MeshInstance, IComputedMembraneData
         }
 
         return crosses;
+    }
+
+    public Vector3[] CreateCollisionShapePoints()
+    {
+        //GD.Print(vertices2D.Count());
+        Update();
+        //GD.Print(vertices2D.Count());
+        var result = new List<Vector3>();
+
+        var addedPoint = vertices2D[0];
+        result.Add(new Vector3(addedPoint.x, 0.0f, addedPoint.y));
+
+        var lastPoint = vertices2D[1];
+        result.Add(new Vector3(lastPoint.x, 0.0f, lastPoint.y));
+
+        var edge = lastPoint - addedPoint;
+        var newEdge = edge;
+        addedPoint = lastPoint;
+
+        // draw ring, only adding points if dierction changes enough in radians (30 degrees = Pi/6)
+        foreach (var point in vertices2D.Skip(1))
+        {
+            newEdge = point - lastPoint;
+            if (newEdge.AngleTo(edge) > Mathf.Pi / 6.0f)
+            {
+                edge = lastPoint - addedPoint;
+                result.Add(new Vector3(lastPoint.x, 0.0f, lastPoint.y));
+                addedPoint = lastPoint;
+            }
+
+            lastPoint = point;
+        }
+
+        // draw triangles above and below ring
+        result.Add(new Vector3(0.3f, 5.0f, 0.0f));
+        result.Add(new Vector3(-0.15f, 5.0f, 0.2f));
+        result.Add(new Vector3(-0.15f, 5.0f, -0.2f));
+        result.Add(new Vector3(0.3f, -5.0f, 0.0f));
+        result.Add(new Vector3(-0.15f, -5.0f, 0.2f));
+        result.Add(new Vector3(-0.15f, -5.0f, -0.2f));
+
+
+
+        Vector3[] returnable = new Vector3[result.Count()];
+        for (int i = 0; i < result.Count(); i++)
+        {
+            returnable[i] = result[i];
+        }
+
+        return returnable;
+        //int size = OrganellePositions.Count() * 2;
+        //cachedShapePoints = new Vector3[size];
+
+        //for (int i = 0; i < size / 2; i++)
+        //{
+        //    cachedShapePoints[i] = new Vector3(OrganellePositions[i].x, 0.0f, OrganellePositions[i].y);
+        //    cachedShapePoints[i + size / 2] = new Vector3(OrganellePositions[i].x, 10.0f, OrganellePositions[i].y);
+        //}
+
+        //return cachedShapePoints;
+
+        //var 
+
+        //foreach (var pos in OrganellePositions)
+        //{
+
+        //}
+        //var tim1 = Time.GetTicksUsec();
+        //Update();
+        //var tim2 = Time.GetTicksUsec();
+        //return startingPoints;
+
+        //int size = vertices2D.Count();
+        //cachedShapePoints = new Vector3[size];
+
+        //for (int i = 0; i < size; i++)
+        //{
+        //    cachedShapePoints[i] = new Vector3(vertices2D[i].x, 0.0f, vertices2D[i].y);
+        //}
+
+        //cachedShapePoints.Append(new Vector3(0.0f, 100.0f, 0.0f));
+        //cachedShapePoints.Append(new Vector3(0.0f, -100.0f, 0.0f));
+
+        //return cachedShapePoints;
+
+        //int size = vertices2D.Count() * 3;
+        //cachedShapePoints = new Vector3[size];
+
+        //for (int i = 0; i < size / 3; i++)
+        //{
+        //    cachedShapePoints[i] = new Vector3(vertices2D[i].x, 0.0f, vertices2D[i].y);
+        //    cachedShapePoints[i + size / 3] = new Vector3(vertices2D[i].x * 0.1f, 1.0f, vertices2D[i].y * 0.1f);
+        //    cachedShapePoints[i + size * 2 / 3] = new Vector3(vertices2D[i].x * 0.1f, -1.0f, vertices2D[i].y * 0.1f);
+        //}
+        ////var tim3 = Time.GetTicksUsec();
+        ////GD.Print("update: " + (tim2 - tim1) + ", points: " + (tim3 - tim2));
+        ////Dirty= false;
+        //return cachedShapePoints;
     }
 
     /// <summary>
