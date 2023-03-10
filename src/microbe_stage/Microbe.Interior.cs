@@ -669,7 +669,7 @@ public partial class Microbe
             return;
 
         // max here buffs compound absorbing for the smallest cells
-        var grabRadius = Mathf.Max(Radius * Mathf.Sqrt(Growth), 3.0f);
+        var grabRadius = Mathf.Max(Radius * Mathf.Sqrt(growth), 3.0f);
 
         cloudSystem!.AbsorbCompounds(GlobalTransform.origin, grabRadius, Compounds,
             TotalAbsorbedCompounds, delta, Membrane.Type.ResourceAbsorptionFactor);
@@ -840,24 +840,26 @@ public partial class Microbe
 
             float jee3 = (jee2 - jee) * 5;
             var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
-            var previousGrowth = Growth;
-            Growth = 1.0f + jee3/jee2;
-            var jeejee = Mathf.Sqrt(Growth) * baseScale;
+            var previousGrowth = growth;
+            growth = 1.0f + jee3/jee2;
+            var jeejee = Mathf.Sqrt(growth) * baseScale;
             ApplyScale(jeejee);
 
-            var newScale = shapeTransform.basis.Scale * Mathf.Sqrt(Growth); // new Vector3(1.001f, 1.001f, 1.001f);
-            var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);
-            ShapeOwnerSetTransform(ownerId, newTransform);
+            ScaleShapes(previousGrowth);
 
-            foreach (var id in pilusPhysicsShapes)
-            {
-                var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
-                var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
-                var newPilusScale = startingScale * Mathf.Sqrt(Growth);
-                var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
-                //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
-                ShapeOwnerSetTransform(id, newPilusTransform);
-            }
+            //var newScale = shapeTransform.basis.Scale * Mathf.Sqrt(growth); // new Vector3(1.001f, 1.001f, 1.001f);
+            //var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);
+            //ShapeOwnerSetTransform(ownerId, newTransform);
+
+            //foreach (var id in pilusPhysicsShapes)
+            //{
+            //    var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
+            //    var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
+            //    var newPilusScale = startingScale * Mathf.Sqrt(growth);
+            //    var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
+            //    //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
+            //    ShapeOwnerSetTransform(id, newPilusTransform);
+            //}
 
             //if (lastScaledPhysics > 10.0f)
             //{
