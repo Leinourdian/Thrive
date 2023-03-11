@@ -838,7 +838,7 @@ public partial class Microbe
                 Console.WriteLine("EREREREREREREREREr");
             }
 
-            float jee3 = (jee2 - jee) * 5;
+            float jee3 = (jee2 - jee);
             var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
             var previousGrowth = growth;
             growth = 1.0f + jee3/jee2;
