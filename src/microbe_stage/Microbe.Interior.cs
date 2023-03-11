@@ -844,45 +844,6 @@ public partial class Microbe
             growth = 1.0f + jee3/jee2;
             var jeejee = Mathf.Sqrt(growth) * baseScale;
             ApplyScale(jeejee);
-
-            //ScaleShapes(previousGrowth);
-
-            //var newScale = shapeTransform.basis.Scale * Mathf.Sqrt(growth); // new Vector3(1.001f, 1.001f, 1.001f);
-            //var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);
-            //ShapeOwnerSetTransform(ownerId, newTransform);
-
-            //foreach (var id in pilusPhysicsShapes)
-            //{
-            //    var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
-            //    var startingScale = oldScale / Mathf.Sqrt(previousGrowth);
-            //    var newPilusScale = startingScale * Mathf.Sqrt(growth);
-            //    var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
-            //    //GD.Print(oldScale + ", " + newPilusTransform.basis.Scale); // only with player?
-            //    ShapeOwnerSetTransform(id, newPilusTransform);
-            //}
-
-            //if (lastScaledPhysics > 10.0f)
-            //{
-            //    lastScaledPhysics = 0.0f;
-
-            //    var tim1 = Time.GetTicksUsec();
-
-            //    foreach (var org in organelles!)
-            //    {
-            //        org.MakeCollisionShapes(this);
-            //    }
-
-            //    var tim2 = Time.GetTicksUsec();
-            //    GD.Print(tim2 - tim1);
-            //}
-
-            //1.41f is about sqrt(2) -> adult diameter = 2 * child diameter...???
-            //trying 0.7f which is about sqrt(2) * 0.5
-            //or maybe 1.0f for simplicity with the previous part... test
-            //if (OrganelleParent.Scale >= 1.4f * baseScale) //new Vector3(0.7f, 0.7f, 0.7f))
-            //{
-            //    reproductionStageComplete = true;
-            //}
         }
         else if (reproductionStageComplete)
         {
@@ -1220,7 +1181,6 @@ public partial class Microbe
             if (!IsMulticellular)
             {
                 //// Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
-                //ResetOrganelleLayout();
                 allOrganellesDivided = false;
                 SetupRequiredBaseReproductionCompounds();
 

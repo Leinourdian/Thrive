@@ -30,9 +30,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
     private float previousGrowth;
     private float pilusGrowth;
 
-    //[JsonIgnore] // I think this is useless
-    //private readonly List<uint> shapes = new();
-
     private uint ownerId;
 
     private Transform shapeTransform;
@@ -245,8 +242,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
     [JsonIgnore]
     public GeometryInstance EntityGraphics => Membrane;
-
-    //public CollisionObject2D Shape { get; set; } = null!;
 
     [JsonIgnore]
     public int RenderPriority
@@ -752,12 +747,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         HandleReproduction(delta);
 
-        if (false) //random.NextFloat() < 0.9f)
-        {
-            shapeTransform.basis.Scale *= new Vector3(1.001f, 1.001f, 1.001f);
-            ShapeOwnerSetTransform(ownerId, shapeTransform);
-        }
-
         // Handles engulfing related stuff as well as modifies the movement factor.
         // This needs to be done before Update is called on organelles as movement organelles will use MovementFactor.
         HandleEngulfing(delta);
@@ -1055,11 +1044,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         SetScaleFromSpecies();
 
-        //float size = HexCount;
-        //if (CellTypeProperties.IsBacteria)
-        //    size *= 0.5f;
-        //EngulfSize = size;
-
         growth = 1.0f;
         pilusGrowth = 1.0f;
 
@@ -1077,51 +1061,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         SetupMicrobeHitpoints();
 
         SetShapeFromSpecies();
-
-        //ScaleShapes(growth);
-
-        ////var tim1 = Time.GetTicksUsec();
-        //SendOrganellePositionsToMembrane(); //TODO: this causes organelles to display awkwardly but also is needed for accurate shape
-        //membraneOrganellePositionsAreDirty = true;
-        ////var tim2 = Time.GetTicksUsec();
-        //// set up collision shape
-        ////var jee = GD.Load<ConvexPolygonShape>("res://assets/models/Iron3.shape");
-        //var shape = new ConvexPolygonShape(); //new CapsuleShape(); //new SphereShape(); //jee;
-        ////shape.Points = Membrane.ConvexShape;// Membrane.CreateCollisionShapePoints(); //Membrane.ConvexShape;
-        //shape.Points = Membrane.CreateCollisionShapePoints();
-        ////GD.Print("============================================");//shape.Points.Count());
-        ////GD.Print(shape.Points.Count());
-        ////var tim3 = Time.GetTicksUsec();
-        ////foreach (var point in shape.Points)
-        ////{
-        ////    GD.Print(point.x + ", " + point.z);
-        ////}
-
-        ////shape.Radius *= 10.0f;
-        ////shape.Height *= 10.0f;
-        //float scaler = 0.85f * (CellTypeProperties.IsBacteria ? 0.5f : 1.0f);  //100.0f;// Mathf.Sqrt(HexCount) * 100.0f;
-        //float scalerY = scaler * Mathf.Sqrt(Radius); //Mathf.Sqrt(HexCount);
-        ////float scalerY = scaler * Mathf.Sqrt(Radius); //Mathf.Sqrt(HexCount);
-
-        ////for (int i = 0; i < shape.Points.Count(); i++)
-        ////{
-        ////    shape.Points[i] *= new Vector3(scaler, scalerY, scaler);
-        ////}
-        //shapeTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(new Vector3(scaler, scalerY, scaler));
-        ////transform.basis.Scale *= 100.0f;
-        ////AddChild(shape)
-        ////var shapeOwner = CreateShapeOwner(this);
-        ////ShapeOwnerAddShape(shapeOwner, shape);
-        ////this.CreateShapeOwnerWithTransform(transform, shape);
-        //ownerId = this.CreateShapeOwnerWithTransform(shapeTransform, shape);
-        ////shapes.Add(ownerId);
-        ////OrganelleParent.
-        ////var tim4 = Time.GetTicksUsec();
-        ////GD.Print("organelles: " + (tim2 - tim1) + ", shape: " + (tim3 - tim2) + ", scaling: " + (tim4 - tim3));
-        //// let's create a shape on the fly
-        //// check out membrane generation for help
-        ////var jeejee = new ConvexPolygonShape();
-        ////jeejee.Points = new Vector3[0];
     }
 
     private void SetScaleFromSpecies()
@@ -1142,17 +1081,6 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         // Scale only the graphics parts to not have physics affected
         Membrane.Scale = scale;
         OrganelleParent.Scale = scale;
-
-        //var scale2D = new Vector2(scale.x, scale.y);
-        //Shape.Scale = scale2D;
-
-        //if (organelles != null)
-        //{
-        //    foreach (var org in organelles)
-        //    {
-        //        org.MakeCollisionShapes(this);
-        //    }
-        //}
     }
 
     private void ApplyRenderPriority()
