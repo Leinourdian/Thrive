@@ -1038,7 +1038,7 @@ public partial class Microbe
         ownerId = this.CreateShapeOwnerWithTransform(shapeTransform, shape);
     }
 
-    private void ScaleShapes(float previousGrowth)
+    private void ScaleShapes()
     {
         if (growth == 1.0f)// || growth == previousGrowth)
             return;

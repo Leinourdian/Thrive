@@ -845,7 +845,7 @@ public partial class Microbe
             var jeejee = Mathf.Sqrt(growth) * baseScale;
             ApplyScale(jeejee);
 
-            ScaleShapes(previousGrowth);
+            //ScaleShapes(previousGrowth);
 
             //var newScale = shapeTransform.basis.Scale * Mathf.Sqrt(growth); // new Vector3(1.001f, 1.001f, 1.001f);
             //var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);

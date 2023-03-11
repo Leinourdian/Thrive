@@ -27,7 +27,7 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
     [JsonProperty]
     private float growth;
-
+    private float previousGrowth;
     private float pilusGrowth;
 
     //[JsonIgnore] // I think this is useless
@@ -460,7 +460,7 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
             SetShapeFromSpecies();
 
             pilusGrowth = 1.0f;
-            ScaleShapes(growth);
+            ScaleShapes();
 
             // Re-attach engulfed objects
             foreach (var engulfed in engulfedObjects)
@@ -783,6 +783,11 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         if (pilusGrowth != growth)
         {
             ScalePilusShapes();
+        }
+
+        if (previousGrowth != growth)
+        {
+            ScaleShapes();
         }
 
         // Rotation is applied in the physics force callback as that's the place where the body rotation
@@ -1127,7 +1132,9 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         if (CellTypeProperties.IsBacteria)
             scale = new Vector3(0.5f, 0.5f, 0.5f);
 
-        ApplyScale(scale * Mathf.Sqrt(growth));
+        float multiplier = Mathf.Max(1.0f, Mathf.Sqrt(growth));
+
+        ApplyScale(scale * multiplier);
     }
 
     private void ApplyScale(Vector3 scale)
