@@ -66,6 +66,8 @@ public class FloatingChunk : RigidBody, ISpawned, IEngulfable
     [JsonProperty]
     private float engulfSize;
 
+    private CollisionShape? collisionShape;
+
     public int DespawnRadiusSquared { get; set; }
 
     [JsonIgnore]
@@ -307,6 +309,13 @@ public class FloatingChunk : RigidBody, ISpawned, IEngulfable
 
         VentCompounds(elapsedSinceProcess, compoundClouds);
 
+        // the below can be used for scaling chunks
+        //collisionShape!.Scale *= 0.998f;
+        //var tim1 = Time.GetTicksUsec();
+        //Scale *= 0.998f;
+        //var tim2 = Time.GetTicksUsec();
+        //GD.Print(tim2 - tim1);
+
         if (UsesDespawnTimer)
             DespawnTimer += elapsedSinceProcess;
 
@@ -535,6 +544,8 @@ public class FloatingChunk : RigidBody, ISpawned, IEngulfable
             Connect("body_shape_entered", this, nameof(OnContactBegin));
             Connect("body_shape_exited", this, nameof(OnContactEnd));
         }
+
+        collisionShape = shape;
     }
 
     private void OnContactBegin(int bodyID, Node body, int bodyShape, int localShape)

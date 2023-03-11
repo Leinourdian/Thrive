@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Newtonsoft.Json;
 using Array = Godot.Collections.Array;
@@ -284,6 +285,53 @@ public class Membrane : MeshInstance, IComputedMembraneData
         }
 
         return crosses;
+    }
+
+    public Vector3[] CreateCollisionShapePoints()
+    {
+        Update();
+
+        var result = new List<Vector3>();
+
+        var addedPoint = vertices2D[0];
+        result.Add(new Vector3(addedPoint.x, 0.0f, addedPoint.y));
+
+        var lastPoint = vertices2D[1];
+        result.Add(new Vector3(lastPoint.x, 0.0f, lastPoint.y));
+
+        var edge = lastPoint - addedPoint;
+        var newEdge = edge;
+        addedPoint = lastPoint;
+
+        // Draw ring, only adding points if direction changes enough in radians (30 degrees = Pi/6)
+        foreach (var point in vertices2D.Skip(1))
+        {
+            newEdge = point - lastPoint;
+            if (newEdge.AngleTo(edge) > Mathf.Pi / 6.0f)
+            {
+                edge = lastPoint - addedPoint;
+                result.Add(new Vector3(lastPoint.x, 0.0f, lastPoint.y));
+                addedPoint = lastPoint;
+            }
+
+            lastPoint = point;
+        }
+
+        // Draw triangles above and below ring
+        result.Add(new Vector3(0.3f, 5.0f, 0.0f));
+        result.Add(new Vector3(-0.15f, 5.0f, 0.2f));
+        result.Add(new Vector3(-0.15f, 5.0f, -0.2f));
+        result.Add(new Vector3(0.3f, -5.0f, 0.0f));
+        result.Add(new Vector3(-0.15f, -5.0f, 0.2f));
+        result.Add(new Vector3(-0.15f, -5.0f, -0.2f));
+
+        Vector3[] returnable = new Vector3[result.Count()];
+        for (int i = 0; i < result.Count(); i++)
+        {
+            returnable[i] = result[i];
+        }
+
+        return returnable;
     }
 
     /// <summary>

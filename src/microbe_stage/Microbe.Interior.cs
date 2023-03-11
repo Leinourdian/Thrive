@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Godot;
 using Newtonsoft.Json;
@@ -16,6 +17,8 @@ public partial class Microbe
 
     [JsonProperty]
     private readonly Dictionary<Compound, float> requiredCompoundsForBaseReproduction = new();
+    [JsonProperty]
+    private readonly Dictionary<Compound, float> totalCostPerCompound = new(); //should this be jsonproperty?
 
     private Compound atp = null!;
     private Compound glucose = null!;
@@ -60,6 +63,8 @@ public partial class Microbe
     private float queuedSlimeSecretionTime;
 
     private float lastCheckedReproduction;
+
+    private float lastScaledPhysics;
 
     /// <summary>
     ///   Flips every reproduction update. Used to make compound use for reproduction distribute more evenly between
@@ -182,7 +187,7 @@ public partial class Microbe
     ///   Called periodically to report the chemoreception settings of the microbe
     /// </summary>
     [JsonProperty]
-    public Action<Microbe, IEnumerable<(Compound Compound, float Range, float MinAmount, Color Colour)>>?
+    public Action<Microbe, IEnumerable<(Compound Compound, float Range, float MinAmount, Godot.Color Colour)>>?
         OnCompoundChemoreceptionInfo { get; set; }
 
     /// <summary>
@@ -551,6 +556,8 @@ public partial class Microbe
     /// </summary>
     public Dictionary<Compound, float> CalculateTotalCompounds()
     {
+        return totalCostPerCompound;
+
         if (organelles == null)
             throw new InvalidOperationException("Microbe must be initialized first");
 
@@ -573,6 +580,14 @@ public partial class Microbe
             throw new InvalidOperationException("Microbe must be initialized first");
 
         var result = new Dictionary<Compound, float>();
+
+        foreach (var entry in requiredCompoundsForBaseReproduction)
+        {
+            var juttu = totalCostPerCompound[entry.Key] - entry.Value;
+            result.Add(entry.Key, juttu);
+        }
+
+        return result;
 
         foreach (var organelle in organelles)
         {
@@ -654,7 +669,7 @@ public partial class Microbe
             return;
 
         // max here buffs compound absorbing for the smallest cells
-        var grabRadius = Mathf.Max(Radius, 3.0f);
+        var grabRadius = Mathf.Max(Radius * Mathf.Sqrt(growth), 3.0f);
 
         cloudSystem!.AbsorbCompounds(GlobalTransform.origin, grabRadius, Compounds,
             TotalAbsorbedCompounds, delta, Membrane.Type.ResourceAbsorptionFactor);
@@ -766,6 +781,7 @@ public partial class Microbe
         }
 
         lastCheckedReproduction += delta;
+        lastScaledPhysics += delta;
 
         // Limit how often the reproduction logic is ran
         if (lastCheckedReproduction < Constants.MICROBE_REPRODUCTION_PROGRESS_INTERVAL)
@@ -800,6 +816,45 @@ public partial class Microbe
         // Process base cost first so the player can be their designed cell (without extra organelles) for a while
         bool reproductionStageComplete =
             ProcessBaseReproductionCost(ref remainingAllowedCompoundUse, ref remainingFreeCompounds);
+
+        //-----------------------------------------
+
+        if (!reproductionStageComplete)
+        {
+            float jee = 0.0f;
+            foreach (float amount in requiredCompoundsForBaseReproduction.Values)
+            {
+                jee += amount;
+            }
+
+            float jee2 = 0.0f;
+            foreach (float amount in totalCostPerCompound.Values)
+            {
+                jee2 += amount;
+            }
+
+            if (jee2 == 0.0f)
+            {
+                Console.WriteLine("EREREREREREREREREr");
+            }
+
+            float jee3 = (jee2 - jee);
+            var baseScale = CellTypeProperties.IsBacteria ? new Vector3(0.5f, 0.5f, 0.5f) : new Vector3(1.0f, 1.0f, 1.0f);
+            var previousGrowth = growth;
+            growth = 1.0f + jee3/jee2;
+            var jeejee = Mathf.Sqrt(growth) * baseScale;
+            ApplyScale(jeejee);
+        }
+        else if (reproductionStageComplete)
+        {
+            // All organelles and base reproduction cost is now fulfilled, we are fully ready to reproduce
+            allOrganellesDivided = true;
+
+            // For NPC cells this immediately splits them and the allOrganellesDivided flag is reset
+            ReadyToReproduce();
+        }
+
+        return;
 
         // For this stage and all others below, reproductionStageComplete tracks whether the previous reproduction
         // stage completed, i.e. whether we should proceed with the next stage
@@ -1021,13 +1076,20 @@ public partial class Microbe
     {
         requiredCompoundsForBaseReproduction.Clear();
         requiredCompoundsForBaseReproduction.Merge(Species.BaseReproductionCost);
+        var sizeCostPerCompound = new Dictionary<Compound, float>();
+        foreach (var compound in requiredCompoundsForBaseReproduction.Keys)
+        {
+            sizeCostPerCompound.Add(compound, HexCount);
+        }
+
+        requiredCompoundsForBaseReproduction.Merge(sizeCostPerCompound);
+        totalCostPerCompound.Clear();
+        totalCostPerCompound.Merge(requiredCompoundsForBaseReproduction);
         totalNeededForMulticellularGrowth = null;
     }
 
     private void OnPlayerDuplicationCheat(object sender, EventArgs e)
     {
-        allOrganellesDivided = true;
-
         Divide();
     }
 
@@ -1118,8 +1180,9 @@ public partial class Microbe
 
             if (!IsMulticellular)
             {
-                // Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
-                ResetOrganelleLayout();
+                //// Return the first cell to its normal, non duplicated cell arrangement and spawn a daughter cell
+                allOrganellesDivided = false;
+                SetupRequiredBaseReproductionCompounds();
 
                 Divide();
             }

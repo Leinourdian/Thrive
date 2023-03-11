@@ -575,7 +575,10 @@ public class PlacedOrganelle : Spatial, IPositionedOrganelle, ISaveLoadedTracked
         //     !IsLoadedFromSave)
         //     ParentMicrobe.Colony.Master.Mass += Definition.Mass;
 
-        MakeCollisionShapes(ParentMicrobe!.Colony?.Master ?? ParentMicrobe);
+        if (false)
+        {
+            MakeCollisionShapes(ParentMicrobe!.Colony?.Master ?? ParentMicrobe);
+        }
 
         if (Definition.Enzymes != null)
         {
@@ -622,33 +625,35 @@ public class PlacedOrganelle : Spatial, IPositionedOrganelle, ISaveLoadedTracked
     /// </remarks>
     private void MakeCollisionShapes(Microbe to)
     {
-        currentShapesParent = to;
+        //currentShapesParent = to;
 
-        float hexSize = Constants.DEFAULT_HEX_SIZE;
+        //float growthStage = Mathf.Sqrt(to.Growth); // shrink a bit? sqrt is too much shrinking
 
-        // Scale the physics hex size down for bacteria
-        if (ParentMicrobe!.CellTypeProperties.IsBacteria)
-            hexSize *= 0.5f;
+        //float hexSize = Constants.DEFAULT_HEX_SIZE * growthStage;
 
-        // Add hex collision shapes
-        foreach (Hex hex in Definition.GetRotatedHexes(Orientation))
-        {
-            var shape = new SphereShape();
-            shape.Radius = hexSize * 2.0f;
+        //// Scale the physics hex size down for bacteria
+        //if (ParentMicrobe!.CellTypeProperties.IsBacteria)
+        //    hexSize *= 0.5f;
 
-            // The shape is in our parent so the final position is our
-            // offset plus the hex offset
-            Vector3 shapePosition = ShapeTruePosition(hex);
+        //// Add hex collision shapes
+        //foreach (Hex hex in Definition.GetRotatedHexes(Orientation))
+        //{
+        //    var shape = new SphereShape();
+        //    shape.Radius = hexSize * 2.0f;
 
-            // Scale for bacteria physics.
-            if (ParentMicrobe.CellTypeProperties.IsBacteria)
-                shapePosition *= 0.5f;
+        //    // The shape is in our parent so the final position is our
+        //    // offset plus the hex offset
+        //    Vector3 shapePosition = ShapeTruePosition(hex) * growthStage;
 
-            // Create a transform for a shape position
-            var transform = new Transform(Quat.Identity, shapePosition);
-            var ownerId = to.CreateShapeOwnerWithTransform(transform, shape);
-            shapes.Add(ownerId);
-        }
+        //    // Scale for bacteria physics.
+        //    if (ParentMicrobe.CellTypeProperties.IsBacteria)
+        //        shapePosition *= 0.5f;
+
+        //    // Create a transform for a shape position
+        //    var transform = new Transform(Quat.Identity, shapePosition);
+        //    var ownerId = to.CreateShapeOwnerWithTransform(transform, shape);
+        //    shapes.Add(ownerId);
+        //}
     }
 
     private void RecalculateGrowthValue()

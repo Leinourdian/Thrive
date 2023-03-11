@@ -25,6 +25,15 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
     /// </summary>
     public Vector3 MovementDirection = new(0, 0, 0);
 
+    [JsonProperty]
+    private float growth;
+    private float previousGrowth;
+    private float pilusGrowth;
+
+    private uint ownerId;
+
+    private Transform shapeTransform;
+
 #pragma warning disable CA2213
     private HybridAudioPlayer engulfAudio = null!;
     private HybridAudioPlayer bindingAudio = null!;
@@ -443,6 +452,11 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
             SetScaleFromSpecies();
             SetMembraneFromSpecies();
 
+            SetShapeFromSpecies();
+
+            pilusGrowth = 1.0f;
+            ScaleShapes();
+
             // Re-attach engulfed objects
             foreach (var engulfed in engulfedObjects)
             {
@@ -755,6 +769,16 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
             QueuedSignalingCommand = null;
         }
 
+        if (pilusGrowth != growth)
+        {
+            ScalePilusShapes();
+        }
+
+        if (previousGrowth != growth)
+        {
+            ScaleShapes();
+        }
+
         // Rotation is applied in the physics force callback as that's the place where the body rotation
         // can be directly set without problems
 
@@ -1020,6 +1044,9 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
 
         SetScaleFromSpecies();
 
+        growth = 1.0f;
+        pilusGrowth = 1.0f;
+
         ResetOrganelleLayout();
 
         SetMembraneFromSpecies();
@@ -1032,6 +1059,8 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         }
 
         SetupMicrobeHitpoints();
+
+        SetShapeFromSpecies();
     }
 
     private void SetScaleFromSpecies()
@@ -1042,7 +1071,9 @@ public partial class Microbe : RigidBody, ISpawned, IProcessable, IMicrobeAI, IS
         if (CellTypeProperties.IsBacteria)
             scale = new Vector3(0.5f, 0.5f, 0.5f);
 
-        ApplyScale(scale);
+        float multiplier = Mathf.Max(1.0f, Mathf.Sqrt(growth));
+
+        ApplyScale(scale * multiplier);
     }
 
     private void ApplyScale(Vector3 scale)

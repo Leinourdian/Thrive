@@ -229,9 +229,9 @@ public partial class Microbe
             var size = HexCount * (1 - DigestedAmount);
 
             if (CellTypeProperties.IsBacteria)
-                return size * 0.5f;
+                size *= 0.5f;
 
-            return size;
+            return size * growth;
         }
     }
 
@@ -1020,6 +1020,46 @@ public partial class Microbe
             if (engulfed.Phagosome.Value != null)
                 engulfed.Phagosome.Value.Tint = CellTypeProperties.Colour;
         }
+    }
+
+    private void SetShapeFromSpecies()
+    {
+        SendOrganellePositionsToMembrane();
+        membraneOrganellePositionsAreDirty = true;
+
+        var shape = new ConvexPolygonShape();
+        shape.Points = Membrane.CreateCollisionShapePoints();
+
+        float scaler = 0.85f * (CellTypeProperties.IsBacteria ? 0.5f : 1.0f);
+        float scalerY = scaler * Mathf.Sqrt(Radius);
+
+        shapeTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(new Vector3(scaler, scalerY, scaler));
+
+        ownerId = this.CreateShapeOwnerWithTransform(shapeTransform, shape);
+    }
+
+    private void ScaleShapes()
+    {
+        if (growth == 1.0f)
+            return;
+
+        var newScale = shapeTransform.basis.Scale * Mathf.Sqrt(growth);
+        var newTransform = new Transform(Quat.Identity, new Vector3(0.0f, 0.0f, 0.0f)).Scaled(newScale);
+        ShapeOwnerSetTransform(ownerId, newTransform);
+    }
+
+    private void ScalePilusShapes()
+    {
+        foreach (var id in pilusPhysicsShapes)
+        {
+            var oldScale = ShapeOwnerGetTransform(id).basis.Scale;
+            var startingScale = oldScale / Mathf.Sqrt(pilusGrowth);
+            var newPilusScale = startingScale * Mathf.Sqrt(growth);
+            var newPilusTransform = ShapeOwnerGetTransform(id).Scaled(newPilusScale / oldScale);
+            ShapeOwnerSetTransform(id, newPilusTransform);
+        }
+
+        pilusGrowth = growth;
     }
 
     private void CheckEngulfShape()
