@@ -56,7 +56,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
     ///   Amount of segments on one side of the above described
     ///   square. The amount of points on the side of the membrane.
     /// </summary>
-    private int membraneResolution = Constants.MEMBRANE_RESOLUTION;
+    private int membraneResolution = Constants.MEMBRANE_RESOLUTION * 1; //*10;
 
     /// <summary>
     ///   When true the mesh needs to be regenerated and material properties applied
@@ -333,14 +333,14 @@ public class Membrane : MeshInstance, IComputedMembraneData
     public Vector2 FindClosestOrganelles(Vector2 target)
     {
         // The distance we want the membrane to be from the organelles squared.
-        float closestSoFar = 4;
+        float closestSoFar = float.MaxValue;// 4;
         Vector2 closest = new Vector2(INVALID_FOUND_ORGANELLE, INVALID_FOUND_ORGANELLE);
 
         foreach (var pos in OrganellePositions)
         {
             float lenToObject = (target - pos).LengthSquared();
 
-            if (lenToObject < 4 && lenToObject < closestSoFar)
+            if (lenToObject < closestSoFar)//lenToObject < 4 && lenToObject < closestSoFar)
             {
                 closestSoFar = lenToObject;
                 closest = pos;
@@ -394,9 +394,11 @@ public class Membrane : MeshInstance, IComputedMembraneData
             return;
         }
 
+        var tim1 = Time.GetTicksUsec();
+
         // The length in pixels (probably not accurate?) of a side of the square that bounds the membrane.
         // Half the side length of the original square that is compressed to make the membrane.
-        int cellDimensions = 10;
+        float cellDimensions = 10; //int to float if you want to mess around
 
         foreach (var pos in OrganellePositions)
         {
@@ -440,14 +442,26 @@ public class Membrane : MeshInstance, IComputedMembraneData
                 -cellDimensions));
         }
 
-        // This needs to actually run a bunch of times as the points moving towards the organelles is iterative.
-        // We use rotating work buffers to save time on skipping useless copies
-        for (int i = 0; i < 40 * cellDimensions; i++)
+        for (int i = 0; i < previousWorkBuffer.Count; i++)
         {
-            DrawCorrectMembrane(cellDimensions, previousWorkBuffer, nextWorkBuffer);
-
-            (previousWorkBuffer, nextWorkBuffer) = (nextWorkBuffer, previousWorkBuffer);
+            previousWorkBuffer[i] = previousWorkBuffer[i] * 100.0f;
         }
+
+        var tim2 = Time.GetTicksUsec();
+
+        DrawCorrectMembrane(cellDimensions, previousWorkBuffer, nextWorkBuffer);
+        (previousWorkBuffer, nextWorkBuffer) = (nextWorkBuffer, previousWorkBuffer);
+
+        //// This needs to actually run a bunch of times as the points moving towards the organelles is iterative.
+        //// We use rotating work buffers to save time on skipping useless copies
+        //for (int i = 0; i < 40 * cellDimensions; i++)// cellDimensions; i++)
+        //{
+        //    DrawCorrectMembrane(cellDimensions, previousWorkBuffer, nextWorkBuffer);
+
+        //    (previousWorkBuffer, nextWorkBuffer) = (nextWorkBuffer, previousWorkBuffer);
+        //}
+
+        var tim3 = Time.GetTicksUsec();
 
         // Copy final vertex data from the work buffer
         vertices2D.Clear();
@@ -458,7 +472,13 @@ public class Membrane : MeshInstance, IComputedMembraneData
         previousWorkBuffer.Clear();
         nextWorkBuffer.Clear();
 
+        var tim4 = Time.GetTicksUsec();
+
         BuildMesh();
+
+        var tim5 = Time.GetTicksUsec();
+        //GD.Print("first " + (tim2 - tim1) + ", second " + (tim3 - tim2) + ", third " + (tim4 - tim3) + ", fourth " + (tim5 - tim4));
+        GD.Print("========================================================================================" + (tim3 - tim2));
     }
 
     private int InitializeCorrectMembrane(int writeIndex, Vector3[] vertices,
@@ -474,7 +494,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
         if (Type.CellWall)
         {
             height = 0.05f;
-            multiplier = Mathf.Pi;
+            multiplier = Mathf.Pi * 2.0f;
         }
 
         vertices[writeIndex] = new Vector3(0, height / 2, 0);
@@ -696,55 +716,263 @@ public class Membrane : MeshInstance, IComputedMembraneData
     private void DrawMembrane(float cellDimensions, List<Vector2> sourceBuffer, List<Vector2> targetBuffer,
         Func<Vector2, Vector2, Vector2> movementFunc)
     {
+        var tim1 = Time.GetTicksUsec();
         while (targetBuffer.Count < sourceBuffer.Count)
             targetBuffer.Add(new Vector2(0, 0));
 
         // TODO: check that this is actually needed, and if triggered does the right thing
         while (targetBuffer.Count > sourceBuffer.Count)
             targetBuffer.RemoveAt(targetBuffer.Count - 1);
+        var tim2 = Time.GetTicksUsec();
+        //// Loops through all the points in the membrane and relocates them as necessary.
+        //for (int i = 0, end = sourceBuffer.Count; i < end; ++i)
+        //{
+        //    var tim11 = Time.GetTicksUsec();
+        //    var closestOrganelle = FindClosestOrganelles(sourceBuffer[i]);
+        //    var tim12 = Time.GetTicksUsec();
+        //    if (closestOrganelle ==
+        //        new Vector2(INVALID_FOUND_ORGANELLE, INVALID_FOUND_ORGANELLE))
+        //    {
+        //        targetBuffer[i] = (sourceBuffer[(end + i - 1) % end] + sourceBuffer[(i + 1) % end]) / 2;
+        //    }
+        //    else
+        //    {
+        //        var movementDirection = movementFunc(sourceBuffer[i], closestOrganelle);
 
-        // Loops through all the points in the membrane and relocates them as necessary.
+        //        targetBuffer[i] = new Vector2(sourceBuffer[i].x - movementDirection.x,
+        //            sourceBuffer[i].y - movementDirection.y);
+        //    }
+        //    var tim13 = Time.GetTicksUsec();
+        //    //GD.Print("first " + (tim12 - tim11) + ", second " + (tim13 - tim12));
+        //}
+
+        membraneResolution *= 10; //10 works too
+
+        // Loops through all the points in outer square and moves them close to organelles.
         for (int i = 0, end = sourceBuffer.Count; i < end; ++i)
         {
+            //var tim11 = Time.GetTicksUsec();
             var closestOrganelle = FindClosestOrganelles(sourceBuffer[i]);
+            //var tim12 = Time.GetTicksUsec();
             if (closestOrganelle ==
                 new Vector2(INVALID_FOUND_ORGANELLE, INVALID_FOUND_ORGANELLE))
             {
                 targetBuffer[i] = (sourceBuffer[(end + i - 1) % end] + sourceBuffer[(i + 1) % end]) / 2;
+                //TODO: idk about this, think about it
             }
             else
             {
-                var movementDirection = movementFunc(sourceBuffer[i], closestOrganelle);
+                var difference = sourceBuffer[i] - closestOrganelle;
+                var direction = difference.Normalized();
+                float distance = difference.Length();
+                var movement = direction * (distance - 2.0f); // 3.0f for eukaryotes because big organelles
 
-                targetBuffer[i] = new Vector2(sourceBuffer[i].x - movementDirection.x,
-                    sourceBuffer[i].y - movementDirection.y);
+                targetBuffer[i] = new Vector2(sourceBuffer[i].x - movement.x,
+                    sourceBuffer[i].y - movement.y);
             }
+
+            //var tim13 = Time.GetTicksUsec();
+            //GD.Print("first " + (tim12 - tim11) + ", second " + (tim13 - tim12));
         }
 
-        // Allows for the addition and deletion of points in the membrane.
+        var tim3 = Time.GetTicksUsec();
+
+        float circumference = 0.0f;
         for (int i = 0; i < targetBuffer.Count - 1; ++i)
         {
+            circumference += (targetBuffer[i + 1] - targetBuffer[i]).Length();
+        }
+
+        // Allows for the addition points in the membrane.
+        int pointsAdded = 0;
+        for (int i = 0; i < targetBuffer.Count - 1; ++i)
+        {
+            bool isLast = i == targetBuffer.Count - 1;
+            var currentPoint = targetBuffer[i];
+            var nextPoint = isLast ? targetBuffer[0] : targetBuffer[i + 1];
+
             // Check to see if the gap between two points in the membrane is too big.
-            if ((targetBuffer[i] - targetBuffer[(i + 1) % targetBuffer.Count]).Length() >
-                cellDimensions / membraneResolution)
+            if ((nextPoint - currentPoint).Length() >
+                circumference / membraneResolution)
             {
                 // Add an element after the ith term that is the average of the
                 // i and i+1 term.
-                var tempPoint = (targetBuffer[(i + 1) % targetBuffer.Count] + targetBuffer[i]) / 2;
+                //var tempPoint = (targetBuffer[i + 1] + targetBuffer[i]) / 2;
 
-                targetBuffer.Insert(i + 1, tempPoint);
-                ++i;
+                var direction = (nextPoint - currentPoint).Normalized();
+                var newPoint = direction * (circumference / membraneResolution) + targetBuffer[i];
+                //var middlePoint = (nextPoint + currentPoint) / 2.0f;
+
+                targetBuffer.Insert(i + 1, newPoint); //TODO: try middle point instead
+                pointsAdded++;
+                //++i;
             }
+        }
 
+        // Allows for the deletion points in the membrane.
+        int pointsRemoved = 0;
+        for (int i = targetBuffer.Count - 1; i > 2; i--)
+        {
             // Check to see if the gap between two points in the membrane is too small.
-            if ((targetBuffer[(i + 1) % targetBuffer.Count] -
-                    targetBuffer[(i + targetBuffer.Count - 1) % targetBuffer.Count]).Length() <
-                cellDimensions / membraneResolution)
+            if ((targetBuffer[i] - targetBuffer[0]).Length() <
+                circumference / membraneResolution)
             {
                 // Delete the ith term.
                 targetBuffer.RemoveAt(i);
+                pointsRemoved++;
+            }
+            else
+            {
+                break;
             }
         }
+
+        for (int i = 0; i < targetBuffer.Count - 1; i++)
+        {
+            // Check to see if the gap between two points in the membrane is too small.
+            if ((targetBuffer[i + 1] - targetBuffer[i]).Length() <
+                    circumference / membraneResolution)
+            {
+                // Delete the ith term.
+                targetBuffer.RemoveAt(i + 1);
+                pointsRemoved++;
+                i--;
+            }
+        }
+
+        // Find the smallest and largest distance between points
+        float smallestDistance = float.MaxValue; //squared
+        float largestDistance = 0.0f; //squared
+        for (int i = 0; i < targetBuffer.Count; ++i)
+        {
+            float distanceSquared;
+
+            if (i == targetBuffer.Count - 1)
+            {
+                distanceSquared = (targetBuffer[0] - targetBuffer[i]).LengthSquared();
+            }
+            else
+            {
+                distanceSquared = (targetBuffer[i + 1] - targetBuffer[i]).LengthSquared();
+            }
+
+            if (distanceSquared < smallestDistance)
+            {
+                smallestDistance = distanceSquared;
+            }
+
+            if (distanceSquared > largestDistance)
+            {
+                largestDistance = distanceSquared;
+            }
+        }
+
+        ////Find center
+        //var center = new Vector2(0.0f, 0.0f);
+        //foreach (var point in targetBuffer)
+        //{
+        //    center += point;
+        //}
+
+        ////Find center 2.0
+        //var center = new Vector2(0.0f, 0.0f);
+        //foreach (var point in OrganellePositions)
+        //{
+        //    center += point;
+        //}
+
+        //center /= OrganellePositions.Count;
+
+        //var center = combinedVector / targetBuffer.Count;
+
+        //If this isn't a cell wall, make it wavier
+        if (!Type.CellWall)
+        {
+            //Find average distance between center and membrane
+            float totalLength = 0.0f;
+            for (int i = 0; i < targetBuffer.Count; i++)
+            {
+                totalLength += targetBuffer[i].Length();//DistanceTo(center);
+            }
+
+            float averageLength = totalLength / targetBuffer.Count;
+
+            //Move points a bit to make a less smooth membrane
+            float distanceTraveled = 0.0f;
+            float multiplier = 2.0f * Mathf.Pi * 10.0f / circumference; //targetBuffer.Count;
+            var random = new Random();
+            for (int i = 0; i < targetBuffer.Count; i++)
+            {
+                var point = targetBuffer[i];
+                var nextPoint = targetBuffer[(i + 1) % targetBuffer.Count];
+                var direction = nextPoint - point;
+                distanceTraveled += direction.Length();
+                float mmm = Mathf.Sin(multiplier * distanceTraveled) * Mathf.Sqrt(averageLength) * 0.03f;// point.DistanceTo(new Vector2(0.0f, 0.0f)) * 0.1f;
+                //Turn 90 degrees
+                var newDirection = new Vector2(-direction.y, direction.x);
+                point += newDirection.Normalized() * mmm; //new Vector2(newX, newY);
+                targetBuffer[i] = point;
+            }
+        }
+
+        ////Move points a bit to make a less smooth membrane
+        ////TODO: try moving away/towards normal instead of center
+        //float multiplier = Mathf.Pi / 4;
+        //var random = new Random();
+        //for (int i = 0; i < targetBuffer.Count; i++)
+        //{
+        //    var point = targetBuffer[i];
+        //    float mmm = Mathf.Sin(i * multiplier) * averageLength * 0.03f;// point.DistanceTo(new Vector2(0.0f, 0.0f)) * 0.1f;
+        //    //var newX = point.x + (random.NextFloat() - 0.5f) * multiplier;
+        //    //var newY = point.y + (random.NextFloat() - 0.5f) * multiplier;
+        //    point += (point - center).Normalized() * mmm; //new Vector2(newX, newY);
+        //    targetBuffer[i] = point;
+        //}
+
+        ////Randomly move points a bit
+        //float multiplier = 0.1f;
+        //var random = new Random();
+        //for (int i = 0; i < targetBuffer.Count; i++)
+        //{
+        //    var point = targetBuffer[i];
+        //    var newX = point.x + (random.NextFloat() - 0.5f) * multiplier;
+        //    var newY = point.y + (random.NextFloat() - 0.5f) * multiplier;
+        //    point += point.Normalized() * (random.NextFloat() - 0.5f) * multiplier; //new Vector2(newX, newY);
+        //    targetBuffer[i] = point;
+        //}
+
+        GD.Print("Points added " + pointsAdded + ", points removed " + pointsRemoved);
+        GD.Print("Circumference " + circumference + ", smallest distance " + Mathf.Sqrt(smallestDistance) + ", largest distance " + Mathf.Sqrt(largestDistance));
+
+        //// Allows for the addition and deletion of points in the membrane.
+        //for (int i = 0; i < targetBuffer.Count - 1; ++i)
+        //{
+        //    // Check to see if the gap between two points in the membrane is too big.
+        //    if ((targetBuffer[i] - targetBuffer[(i + 1) % targetBuffer.Count]).Length() >
+        //        cellDimensions / membraneResolution)
+        //    {
+        //        // Add an element after the ith term that is the average of the
+        //        // i and i+1 term.
+        //        var tempPoint = (targetBuffer[(i + 1) % targetBuffer.Count] + targetBuffer[i]) / 2;
+
+        //        targetBuffer.Insert(i + 1, tempPoint);
+        //        ++i;
+        //    }
+
+        //    // Check to see if the gap between two points in the membrane is too small.
+        //    if ((targetBuffer[(i + 1) % targetBuffer.Count] -
+        //            targetBuffer[(i + targetBuffer.Count - 1) % targetBuffer.Count]).Length() <
+        //        cellDimensions / membraneResolution)
+        //    {
+        //        // Delete the ith term.
+        //        targetBuffer.RemoveAt(i);
+        //    }
+        //}
+
+        var tim4 = Time.GetTicksUsec();
+        //GD.Print("first " + (tim2 - tim1) + ", second " + (tim3 - tim2) + ", third " + (tim4 - tim3));
+        GD.Print("Moving points took " + (tim3 - tim2) + ", DrawMembrane took " + (tim4 - tim1) + ", targetBuffer " + targetBuffer.Count);
+        membraneResolution /= 10;
     }
 
     private ComputedMembraneData CreateDataForCache(ArrayMesh mesh, int surfaceIndex)
