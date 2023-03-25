@@ -610,13 +610,28 @@ public partial class Microbe
             throw new InvalidOperationException("Microbe must be initialized first");
 
         var organellePositions = new List<Vector2>();
+        var jeejee = new Dictionary<Vector2, int>();
+        var isBact = true;
 
         foreach (var entry in organelles.Organelles)
         {
+            //foreach (var hex in entry.Definition.Hexes)
+            //{
+            //    var cartesian = Hex.AxialToCartesian(entry.Position + hex);
+            //    organellePositions.Add(new Vector2(cartesian.x, cartesian.z));
+            //}
+            if (entry.Definition.HexCount > 1)
+            {
+                isBact = false;
+            }
+
             var cartesian = Hex.AxialToCartesian(entry.Position);
+            jeejee.Add(new Vector2(cartesian.x, cartesian.z), entry.Definition.HexCount);
             organellePositions.Add(new Vector2(cartesian.x, cartesian.z));
         }
 
+        Membrane.IsBacteria = isBact;// CellTypeProperties.IsBacteria;
+        Membrane.Organelles = jeejee;
         Membrane.OrganellePositions = organellePositions;
         Membrane.Dirty = true;
         membraneOrganellePositionsAreDirty = false;
@@ -1028,6 +1043,7 @@ public partial class Microbe
 
     private void SetMembraneFromSpecies()
     {
+        //Membrane.IsBacteria = !CellTypeProperties.IsBacteria;
         Membrane.Type = CellTypeProperties.MembraneType;
         Membrane.Tint = CellTypeProperties.Colour;
         Membrane.Dirty = true;
