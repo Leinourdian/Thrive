@@ -59,7 +59,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
     ///   Amount of segments on one side of the above described
     ///   square. The amount of points on the side of the membrane.
     /// </summary>
-    private int membraneResolution = 3;// Constants.MEMBRANE_RESOLUTION * 1; //*10;
+    private int membraneResolution = Constants.MEMBRANE_RESOLUTION * 1; //*10;
 
     /// <summary>
     ///   When true the mesh needs to be regenerated and material properties applied
