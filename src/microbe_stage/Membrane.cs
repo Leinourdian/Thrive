@@ -59,7 +59,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
     ///   Amount of segments on one side of the above described
     ///   square. The amount of points on the side of the membrane.
     /// </summary>
-    private int membraneResolution = Constants.MEMBRANE_RESOLUTION * 1; //*10;
+    private int membraneResolution = 3;// Constants.MEMBRANE_RESOLUTION * 1; //*10;
 
     /// <summary>
     ///   When true the mesh needs to be regenerated and material properties applied
@@ -532,15 +532,16 @@ public class Membrane : MeshInstance, IComputedMembraneData
         {
             // Finds the UV coordinates be projecting onto a plane and
             // stretching to fit a circle.
-
+            //var tim1 = Time.GetTicksUsec();
             float currentRadians = multiplier * i / end;
 
             vertices[writeIndex] = new Vector3(vertices2D[i % end].x, height / 2,
                 vertices2D[i % end].y);
-
+            //var tim2 = Time.GetTicksUsec();
             uvs[writeIndex] = center +
                 new Vector2(Mathf.Cos(currentRadians), Mathf.Sin(currentRadians)) / 2;
-
+            //var tim3 = Time.GetTicksUsec();
+            //GD.Print("Cos Sin " + (tim3 - tim2) + ", other " + (tim2 - tim1));
             ++writeIndex;
         }
 
@@ -689,6 +690,8 @@ public class Membrane : MeshInstance, IComputedMembraneData
         var indices = new int[indexSize];
         int currentVertexIndex = 1;
 
+        var tim1 = Time.GetTicksUsec();
+
         for (int i = 0; i < indexSize; i += 3)
         {
             indices[i] = 0;
@@ -697,14 +700,14 @@ public class Membrane : MeshInstance, IComputedMembraneData
 
             ++currentVertexIndex;
         }
-
+        var tim2 = Time.GetTicksUsec();
         // Write mesh data //
         var vertices = new Vector3[bufferSize];
         var uvs = new Vector2[bufferSize];
 
         int writeIndex = 0;
         writeIndex = InitializeCorrectMembrane(writeIndex, vertices, uvs);
-
+        var tim3 = Time.GetTicksUsec();
         if (writeIndex != bufferSize)
             throw new Exception("Membrane buffer write ended up at wrong index");
 
@@ -718,18 +721,22 @@ public class Membrane : MeshInstance, IComputedMembraneData
         arrays[(int)Mesh.ArrayType.Vertex] = vertices;
         arrays[(int)Mesh.ArrayType.Index] = indices;
         arrays[(int)Mesh.ArrayType.TexUv] = uvs;
-
+        var tim4 = Time.GetTicksUsec();
         // Create the mesh
         var generatedMesh = new ArrayMesh();
 
         var surfaceIndex = generatedMesh.GetSurfaceCount();
-        generatedMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
-
+        var tim5 = Time.GetTicksUsec();
+        generatedMesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays); //This part often takes about 5-10ms regardless of resolution/size
+        var tim6 = Time.GetTicksUsec();
         // Apply the mesh to us
         Mesh = generatedMesh;
         SetSurfaceMaterial(surfaceIndex, MaterialToEdit);
-
+        var tim7 = Time.GetTicksUsec();
         ProceduralDataCache.Instance.WriteMembraneData(CreateDataForCache(generatedMesh, surfaceIndex));
+        var tim8 = Time.GetTicksUsec();
+
+        GD.Print((tim2 - tim1) + ", " + (tim3 - tim2) + ", " + (tim4 - tim3) + ", " + (tim5 - tim4) + ", " + (tim6 - tim5) + ", " + (tim7 - tim6) + ", " + (tim8 - tim7));
     }
 
     private List<Vector2> DrawCorrectMembrane(List<Vector2> sourceBuffer) //float cellDimensions, List<Vector2> sourceBuffer, List<Vector2> targetBuffer)

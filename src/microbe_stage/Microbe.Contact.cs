@@ -620,7 +620,7 @@ public partial class Microbe
             //    var cartesian = Hex.AxialToCartesian(entry.Position + hex);
             //    organellePositions.Add(new Vector2(cartesian.x, cartesian.z));
             //}
-            if (entry.Definition.HexCount > 1)
+            if (entry.Definition.HexCount > 1 && isBact)
             {
                 isBact = false;
             }
@@ -631,7 +631,7 @@ public partial class Microbe
         }
 
         Membrane.IsBacteria = isBact;// CellTypeProperties.IsBacteria;
-        Membrane.Organelles = jeejee;
+        Membrane.Organelles = jeejee; //This is useless now
         Membrane.OrganellePositions = organellePositions;
         Membrane.Dirty = true;
         membraneOrganellePositionsAreDirty = false;
