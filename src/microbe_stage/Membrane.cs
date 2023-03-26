@@ -832,7 +832,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
 
         //TODO: Does the above add startingPoint twice? Test by printing!
 
-        membraneResolution *= 10; //10 works too
+        membraneResolution *= 4; //10 works too
 
         var tim2 = Time.GetTicksUsec();
 
@@ -875,6 +875,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
 
         //return targetBuffer;
 
+        //Make new buffer with evenly placed points
         var newBuffer = new List<Vector2>();
         var lastAddedPoint = targetBuffer[0];
         newBuffer.Add(lastAddedPoint);
@@ -988,7 +989,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
         var tim5 = Time.GetTicksUsec();
 
         //If this isn't a cell wall, make it wavier
-        if (!Type.CellWall)
+        if (true)//!Type.CellWall)
         {
             //Find average distance between center and membrane
             float totalLength = targetBuffer[0].Length();// 0.0f;
@@ -1002,7 +1003,8 @@ public class Membrane : MeshInstance, IComputedMembraneData
             //Move points a bit to make a less smooth membrane
             //float distanceTraveled = 0.0f;
             float multiplier = 2.0f * Mathf.Pi * 9.0f / targetBuffer.Count;// circumference; //10.0f targetBuffer.Count; 7 too little, 8 and 10 ok, 9 great
-            float multiplier2 = Mathf.Sqrt(averageLength) * 0.02f; // 0.02f pretty good, 0.03f little aggressive, 0.01f barely noticeable;
+            float multiplier2 = Mathf.Sqrt(averageLength) * (Type.CellWall ? 0.02f : 0.03f); // 0.02f pretty good, 0.03f little aggressive, 0.01f barely noticeable;
+            float multiplier3 = multiplier / 2.5f; //3.0f
             //var random = new Random();
             for (int i = 0; i < targetBuffer.Count; i++)
             {
@@ -1010,7 +1012,11 @@ public class Membrane : MeshInstance, IComputedMembraneData
                 var nextPoint = targetBuffer[(i + 1) % targetBuffer.Count];
                 var direction = nextPoint - point;
                 //distanceTraveled += direction.Length();
-                float mmm = Mathf.Sin(multiplier * i) * multiplier2; //distanceTraveled
+                float extremeness = Mathf.Sin(i * multiplier3);// * 0.5f;
+                float closeness = 1.0f;// + Mathf.Sin(i * multiplier3) * 0.5f;
+                float mmm = Mathf.Sin(multiplier * i) * 1.0f * multiplier2;// * (1.0f + 0.5f * extremeness);
+                //float mmm = (Mathf.Sin(multiplier * i) + extremeness)* 1.0f * multiplier2;
+                //float mmm = Mathf.Sin(closeness * ((multiplier * i) % (2.0f * Mathf.Pi))) * multiplier2 * extremeness; //distanceTraveled
                 //Turn 90 degrees
                 var newDirection = new Vector2(-direction.y, direction.x);
                 point += newDirection.Normalized() * mmm;
@@ -1076,7 +1082,7 @@ public class Membrane : MeshInstance, IComputedMembraneData
         //GD.Print("first " + (tim2 - tim1) + ", second " + (tim3 - tim2) + ", third " + (tim4 - tim3));
         //GD.Print("Circumference " + circumference + ", smallest distance " + Mathf.Sqrt(smallestDistance) + ", largest distance " + Mathf.Sqrt(largestDistance) + ", targetBuffer " + targetBuffer.Count);
         GD.Print("Moving points " + (tim3 - tim2) + ", newBuffer " + (tim4 - tim3) + ", distances " + (tim5 - tim4) + ", waves " + (tim6 - tim5));
-        membraneResolution /= 10;
+        membraneResolution /= 4;
 
         return targetBuffer;
     }
